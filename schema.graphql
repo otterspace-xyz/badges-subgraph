@@ -8,7 +8,7 @@
 # https://thegraph.com/docs/en/developing/creating-a-subgraph/#one-to-many-relationships
 type BadgeSpec @entity {
   id: String!
-  # specUri: String!
+  uri: String!
   raftTokenId: BigInt!
   raftTokenAddress: Bytes!
   badges: [Badge!]! @derivedFrom(field: "spec")
