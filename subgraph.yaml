@@ -1,7 +1,6 @@
 specVersion: 0.0.4
 description: Otterspace badges
-repository: https://github.com/otterspace-xyz/badges-subgraph
-version: 1.0.0
+repository: https://github.com/otterspace-xyz/badges-subgraphs
 schema:
   file: ./schema.graphql
 dataSources:
