@@ -1,0 +1,29 @@
+specVersion: 0.0.4
+description: Otterspace badges
+repository: https://github.com/otterspace-xyz/badges-subgraph
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum/contract
+    name: Badges
+    network: goerli
+    source:
+      abi: Badges
+      address: "0xa6773847d3D2c8012C9cF62818b320eE278Ff722"
+      startBlock: 7456664
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - BadgeSpec
+        - Badge
+      abis:
+        - name: Badges
+          file: ./abis/Badges.json
+      eventHandlers:
+        - event: SpecCreated(indexed address,string,indexed uint256,indexed address)
+          handler: handleSpecCreated
+        - event: Transfer(indexed address,indexed address,indexed uint256)
+          handler: handleBadgeMinted
+      file: ./src/mapping.ts

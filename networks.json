@@ -1,0 +1,14 @@
+{
+  "optimism": {
+    "Badges": {
+      "address": "0x835bD6b20206417ff9168B174cE67D812D746dc5",
+      "startBlock": 20256079
+    }
+  },
+  "goerli": {
+    "Badges": {
+      "address": "0xa6773847d3D2c8012C9cF62818b320eE278Ff722",
+      "startBlock": 7456664
+    }
+  }
+}
