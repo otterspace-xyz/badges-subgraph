@@ -1,16 +1,19 @@
-# type ExampleEntity @entity {
-#   id: ID!
-#   count: BigInt!
-#   previousAdmin: Bytes! # address
-#   newAdmin: Bytes! # address
-# }
-
 # https://thegraph.com/docs/en/developing/creating-a-subgraph/#one-to-many-relationships
+
+type Raft @entity {
+  id: ID!
+  owner: Bytes!
+  tokenId: BigInt!
+  specs: [BadgeSpec!]! @derivedFrom(field: "raft")
+  totalSpecsCount: Int!
+  totalBadgesCount: Int!
+  createdAtTimestamp: BigInt!
+}
+
 type BadgeSpec @entity {
   id: String!
   uri: String!
-  raftTokenId: BigInt!
-  raftTokenAddress: Bytes!
+  raft: Raft!
   badges: [Badge!]! @derivedFrom(field: "spec")
   totalBadgesCount: Int!
   createdAtTimestamp: BigInt!
@@ -22,4 +25,5 @@ type Badge @entity {
   owner: Bytes!
   spec: BadgeSpec!
   createdAtTimestamp: BigInt!
+  burnedAtTimestamp: BigInt
 }
