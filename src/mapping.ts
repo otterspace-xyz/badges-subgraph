@@ -5,40 +5,11 @@ import {
 } from '../generated/Badges/Badges';
 import { Transfer as RaftTransfer, Raft as RaftContract } from '../generated/Raft/Raft';
 import { BadgeSpec, Badge, Raft } from '../generated/schema';
-import { BigInt, Address, log } from '@graphprotocol/graph-ts';
+import { log, json } from '@graphprotocol/graph-ts';
+import { ipfs } from '@graphprotocol/graph-ts';
+import { getCIDFromIPFSUri, getBadgeID, getRaftID, appendMetadataPath } from './utils';
 
-const metadataPart = '/metadata.json';
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
-const raftsUrnNamespace = 'rafts';
-const badgesUrnNamespace = 'badges';
-
-// returns a string representing the raftID in the format `rafts:raftAddress:raftTokenId`
-function getRaftID(raftTokenId: BigInt, raftAddress: Address): string {
-  return raftsUrnNamespace
-    .concat(':')
-    .concat(raftAddress.toHexString())
-    .concat(':')
-    .concat(raftTokenId.toString());
-}
-
-// returns a string that is a CID extracted from the IPFS uri
-function getSpecID(uri: string): string {
-  return uri.substring(uri.lastIndexOf('/') + 1);
-}
-
-// returns a string representing a unique badgeID in the format `badges:badgeAddress:badgeTokenId`
-function getBadgeID(badgeTokenId: BigInt, badgeAddress: Address): string {
-  return badgesUrnNamespace
-    .concat(':')
-    .concat(badgeAddress.toHexString())
-    .concat(':')
-    .concat(badgeTokenId.toString());
-}
-
-// returns a fully formed metadata uri for raft & badge metadata
-function getMetadataUri(uri: string): string {
-  return uri.concat(metadataPart);
-}
 
 export function handleRaftTransfer(event: RaftTransfer): void {
   const to = event.params.to;
@@ -60,23 +31,57 @@ export function handleRaftTransfer(event: RaftTransfer): void {
 
     const raftContract = RaftContract.bind(event.address);
     raft.uri = raftContract.tokenURI(tokenId);
+
+    const cid = getCIDFromIPFSUri(raft.uri);
+    const metadataBytes = ipfs.cat(cid);
+    if (metadataBytes) {
+      const result = json.try_fromBytes(metadataBytes);
+      if (result.isOk) {
+        const name = result.value.toObject().get('name');
+        raft.name = name !== null ? name.toString() : null;
+
+        const description = result.value.toObject().get('description');
+        raft.description = description !== null ? description.toString() : null;
+      } else {
+        log.error('handleRaftTransfer: error fetching metadata for {}', [cid]);
+      }
+    } else {
+      log.error('handleRaftTransfer: Invalid IPFS for cid {} for raftID {}', [cid, raftID]);
+    }
   }
   raft.save();
 }
 
 export function handleSpecCreated(event: SpecCreated): void {
-  const id = getSpecID(event.params.specUri);
-  const uri = getMetadataUri(event.params.specUri);
+  const cid = getCIDFromIPFSUri(event.params.specUri);
+  const uri = appendMetadataPath(event.params.specUri);
   const raftAddress = event.params.raftAddress;
-  const raftTokenId = event.params.raftTokenId;
+  const raftTokenId = event.params.raftTokenId;``
   const raftID = getRaftID(raftTokenId, raftAddress);
   const timestamp = event.block.timestamp;
 
-  let spec = new BadgeSpec(id);
+  let spec = new BadgeSpec(cid);
   spec.uri = uri;
   spec.raft = raftID;
   spec.createdAtTimestamp = timestamp;
   spec.totalBadgesCount = 0;
+
+  const cidPath = appendMetadataPath(cid);
+  const metadataBytes = ipfs.cat(cidPath);
+  if (metadataBytes) {
+    const result = json.try_fromBytes(metadataBytes);
+    if (result.isOk) {
+      const name = result.value.toObject().get('name');
+      spec.name = name !== null ? name.toString() : null;
+
+      const description = result.value.toObject().get('description');
+      spec.description = description !== null ? description.toString() : null;
+    } else {
+      log.error('handleSpecCreated: error fetching metadata for {}', [cid]);
+    }
+  } else {
+    log.error('handleSpecCreated: Invalid cid {} for {}', [cid, uri]);
+  }
   spec.save();
 
   const raft = Raft.load(raftID);
@@ -108,7 +113,7 @@ function handleBadgeMinted(badgeId: string, event: BadgeTransfer): void {
 
   const badgesContract = BadgesContract.bind(event.address);
   const specUri = badgesContract.tokenURI(tokenId);
-  const specID = getSpecID(specUri);
+  const specID = getCIDFromIPFSUri(specUri);
 
   let badge = new Badge(badgeId);
   badge.from = from;

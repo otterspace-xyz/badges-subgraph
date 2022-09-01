@@ -3,7 +3,29 @@ description: Otterspace badges
 repository: https://github.com/otterspace-xyz/badges-subgraphs
 schema:
   file: ./schema.graphql
+features:
+  - ipfsOnEthereumContracts
 dataSources:
+  - kind: ethereum/contract
+    name: Raft
+    network: goerli
+    source:
+      abi: Raft
+      address: "0xBb8997048e5F0bFe6C9D6BEe63Ede53BD0236Bb2"
+      startBlock: 7456732
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - Transfer
+      abis:
+        - name: Raft
+          file: ./abis/Raft.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,indexed uint256)
+          handler: handleRaftTransfer
+      file: ./src/mapping.ts
   - kind: ethereum/contract
     name: Badges
     network: goerli
@@ -26,24 +48,4 @@ dataSources:
           handler: handleSpecCreated
         - event: Transfer(indexed address,indexed address,indexed uint256)
           handler: handleBadgeTransfer
-      file: ./src/mapping.ts
-  - kind: ethereum/contract
-    name: Raft
-    network: goerli
-    source:
-      abi: Raft
-      address: "0xBb8997048e5F0bFe6C9D6BEe63Ede53BD0236Bb2"
-      startBlock: 7456732
-    mapping:
-      kind: ethereum/events
-      apiVersion: 0.0.6
-      language: wasm/assemblyscript
-      entities:
-        - Transfer
-      abis:
-        - name: Raft
-          file: ./abis/Raft.json
-      eventHandlers:
-        - event: Transfer(indexed address,indexed address,indexed uint256)
-          handler: handleRaftTransfer
       file: ./src/mapping.ts
