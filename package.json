@@ -8,7 +8,7 @@
     "format:file": "prettier --config .prettierrc --write",
     "codegen": "graph codegen",
     "build:goerli": "graph build --network goerli",
-    "build:optimism": "graph build --network goerli",
+    "build:optimism": "graph build --network optimism",
     "deploy:goerli": "graph deploy --product hosted-service otterspace-xyz/badges-goerli --network goerli",
     "deploy:optimism": "graph deploy --product hosted-service otterspace-xyz/badges-optimism --network optimism",
     "create-local": "graph create --node http://localhost:8020/ badges",
