@@ -1,5 +1,5 @@
 import { describe, test, assert } from 'matchstick-as';
-import { getCIDFromIPFSUri } from '../src/utils';
+import { getCIDFromIPFSUri } from '../src/utils/helper';
 
 describe('utils', () => {
   test('Should get cid from an IPFS link', () => {

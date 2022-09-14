@@ -30,8 +30,6 @@ export function getCIDFromIPFSUri(uri: string): string {
 export function getRaftID(raftTokenId: BigInt, raftAddress: Address): string {
   return raftsUrnNamespace
     .concat(':')
-    // .concat(raftAddress.toHexString())
-    // .concat(':')
     .concat(raftTokenId.toString());
 }
 
@@ -39,7 +37,5 @@ export function getRaftID(raftTokenId: BigInt, raftAddress: Address): string {
 export function getBadgeID(badgeTokenId: BigInt, badgeAddress: Address): string {
   return badgesUrnNamespace
     .concat(':')
-    // .concat(badgeAddress.toHexString())
-    // .concat(':')
     .concat(badgeTokenId.toString());
 }
