@@ -1,7 +1,7 @@
 import { SpecCreated, Transfer as BadgeTransfer } from '../generated/Badges/Badges';
 import { Transfer as RaftTransfer, Raft as RaftContract } from '../generated/Raft/Raft';
 import { BadgeSpec, Raft } from '../generated/schema';
-import { log, json, JSONValue } from '@graphprotocol/graph-ts';
+import { log, json, JSONValue, BigInt, JSONValueKind } from '@graphprotocol/graph-ts';
 import { ipfs } from '@graphprotocol/graph-ts';
 import { getCIDFromIPFSUri, getBadgeID, getRaftID, appendMetadataPath } from './utils/helper';
 import { handleBadgeMinted, handleBadgeBurned } from './badges';
@@ -35,7 +35,8 @@ export function handleRaftTransfer(event: RaftTransfer): void {
     raft.uri = raftContract.tokenURI(tokenId);
 
     const cid = getCIDFromIPFSUri(raft.uri);
-    const metadataBytes = ipfs.cat(cid);
+    const cidPath = appendMetadataPath(cid);
+    const metadataBytes = ipfs.cat(cidPath);
     if (metadataBytes) {
       const result = json.try_fromBytes(metadataBytes);
       if (result.isOk) {
@@ -74,6 +75,7 @@ export function handleSpecCreated(event: SpecCreated): void {
   let name = '';
   let description = '';
   let image = '';
+  let expiresAt: string | null = null;
 
   const cidPath = appendMetadataPath(cid);
   const metadataBytes = ipfs.cat(cidPath);
@@ -84,8 +86,14 @@ export function handleSpecCreated(event: SpecCreated): void {
       description = (result.value.toObject().get('description') as JSONValue).toString();
       image = (result.value.toObject().get('image') as JSONValue).toString();
 
-      // const expiresAtTimestamp = result.value.toObject().get('expiresAt');
-      // spec.expiresAt = expiresAtTimestamp !== null ? expiresAtTimestamp.toBigInt() : null;
+      const properties = result.value.toObject().get('properties');
+      const expiresAtJsonValue =
+        properties !== null ? properties.toObject().get('expiresAt') : null;
+
+      expiresAt =
+        expiresAtJsonValue !== null && expiresAtJsonValue.kind === JSONValueKind.STRING
+          ? expiresAtJsonValue.toString()
+          : null;
     } else {
       log.error('handleSpecCreated: error fetching metadata for {}', [cid]);
     }
@@ -96,6 +104,7 @@ export function handleSpecCreated(event: SpecCreated): void {
   spec.name = name;
   spec.description = description;
   spec.image = image;
+  spec.expiresAt = expiresAt;
 
   spec.save();
 

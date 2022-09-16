@@ -21,7 +21,7 @@ type BadgeSpec @entity {
   description: String!
   uri: String!
   image: String!
-  expiresAt: BigInt
+  expiresAt: String
   raft: Raft!
   badges: [Badge!]! @derivedFrom(field: "spec")
   totalBadgesCount: Int!
