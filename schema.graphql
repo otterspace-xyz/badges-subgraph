@@ -2,17 +2,25 @@
 
 type Raft @entity {
   id: ID!
+  name: String
+  description: String
+  uri: String!
   owner: Bytes!
   tokenId: BigInt!
   specs: [BadgeSpec!]! @derivedFrom(field: "raft")
   totalSpecsCount: Int!
   totalBadgesCount: Int!
   createdAtTimestamp: BigInt!
+  createdBy: String!
 }
 
 type BadgeSpec @entity {
   id: String!
+  name: String
+  description: String
   uri: String!
+  image: String
+  expiresAtTimestamp: BigInt
   raft: Raft!
   badges: [Badge!]! @derivedFrom(field: "spec")
   totalBadgesCount: Int!
