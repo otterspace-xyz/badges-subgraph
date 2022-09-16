@@ -12,7 +12,7 @@ export function appendMetadataPath(uri: string): string {
 // returns a string that is a CID extracted from the IPFS uri
 export function getCIDFromIPFSUri(uri: string): string {
   let cid = '';
-  if (uri.indexOf('ipfs://') >= 0) {
+  if (uri.indexOf('ipfs://') >= 0 || uri.indexOf('https://ipfs.io') >= 0) {
     uri = uri.replaceAll(metadataPart, '');
     cid = uri.substring(uri.lastIndexOf('/') + 1);
   } else if (uri.indexOf('nftstorage') > 0) {

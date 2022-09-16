@@ -26,4 +26,15 @@ describe('utils', () => {
     const actual = getCIDFromIPFSUri(uri);
     assert.stringEquals(expected, actual);
   });
+
+  test('Should get cid from an IPFS gateway link', () => {
+    const uri =
+      'https://ipfs.io/ipfs/bafyreih34i2tlahqj3obyjidjmypsmhtugy2jjjwgk7owiskvunusr3ovu';
+    const expected = 'bafyreih34i2tlahqj3obyjidjmypsmhtugy2jjjwgk7owiskvunusr3ovu';
+
+    const actual = getCIDFromIPFSUri(uri);
+    assert.stringEquals(expected, actual);
+  });
 });
+
+
