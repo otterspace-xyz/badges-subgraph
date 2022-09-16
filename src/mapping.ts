@@ -24,7 +24,7 @@ export function handleRaftTransfer(event: RaftTransfer): void {
     raft.tokenId = tokenId;
     raft.totalBadgesCount = 0;
     raft.totalSpecsCount = 0;
-    raft.createdAtTimestamp = timestamp;
+    raft.createdAt = timestamp;
     raft.createdBy = event.params.from.toHexString();
 
     const raftContract = RaftContract.bind(event.address);
@@ -61,7 +61,7 @@ export function handleSpecCreated(event: SpecCreated): void {
   let spec = new BadgeSpec(cid);
   spec.uri = uri;
   spec.raft = raftID;
-  spec.createdAtTimestamp = timestamp;
+  spec.createdAt = timestamp;
   spec.totalBadgesCount = 0;
 
   const cidPath = appendMetadataPath(cid);
@@ -79,7 +79,7 @@ export function handleSpecCreated(event: SpecCreated): void {
       spec.image = image !== null ? image.toString() : null;
 
       const expiresAtTimestamp = result.value.toObject().get('expiresAt');
-      spec.expiresAtTimestamp = expiresAtTimestamp !== null ? expiresAtTimestamp.toBigInt() : null;
+      spec.expiresAt = expiresAtTimestamp !== null ? expiresAtTimestamp.toBigInt() : null;
     } else {
       log.error('handleSpecCreated: error fetching metadata for {}', [cid]);
     }

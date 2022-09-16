@@ -17,7 +17,7 @@ export function handleBadgeMinted(badgeId: string, event: BadgeTransfer): void {
   badge.from = from;
   badge.owner = to;
   badge.spec = specID;
-  badge.createdAtTimestamp = timestamp;
+  badge.createdAt = timestamp;
   badge.save();
 
   const spec = BadgeSpec.load(specID);
@@ -45,7 +45,7 @@ export function handleBadgeBurned(badgeId: string, event: BadgeTransfer): void {
 
   const badge = Badge.load(badgeId);
   if (badge !== null) {
-    badge.burnedAtTimestamp = timestamp;
+    badge.burnedAt = timestamp;
     badge.save();
   } else {
     log.error(

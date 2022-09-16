@@ -10,7 +10,7 @@ type Raft @entity {
   specs: [BadgeSpec!]! @derivedFrom(field: "raft")
   totalSpecsCount: Int!
   totalBadgesCount: Int!
-  createdAtTimestamp: BigInt!
+  createdAt: BigInt!
   createdBy: String!
 }
 
@@ -20,11 +20,11 @@ type BadgeSpec @entity {
   description: String
   uri: String!
   image: String
-  expiresAtTimestamp: BigInt
+  expiresAt: BigInt
   raft: Raft!
   badges: [Badge!]! @derivedFrom(field: "spec")
   totalBadgesCount: Int!
-  createdAtTimestamp: BigInt!
+  createdAt: BigInt!
 }
 
 type Badge @entity {
@@ -32,6 +32,6 @@ type Badge @entity {
   from: Bytes!
   owner: Bytes!
   spec: BadgeSpec!
-  createdAtTimestamp: BigInt!
-  burnedAtTimestamp: BigInt
+  createdAt: BigInt!
+  burnedAt: BigInt
 }
