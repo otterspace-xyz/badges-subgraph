@@ -36,10 +36,10 @@ export function handleRaftTransfer(event: RaftTransfer): void {
       const result = json.try_fromBytes(metadataBytes);
       if (result.isOk) {
         const name = result.value.toObject().get('name');
-        raft.name = name !== null ? name.toString() : null;
+        raft.name = name !== null ? name.toString() : '';
 
         const description = result.value.toObject().get('description');
-        raft.description = description !== null ? description.toString() : null;
+        raft.description = description !== null ? description.toString() : '';
       } else {
         log.error('handleRaftTransfer: error fetching metadata for {}', [cid]);
       }
@@ -70,13 +70,13 @@ export function handleSpecCreated(event: SpecCreated): void {
     const result = json.try_fromBytes(metadataBytes);
     if (result.isOk) {
       const name = result.value.toObject().get('name');
-      spec.name = name !== null ? name.toString() : null;
+      spec.name = name !== null ? name.toString() : '';
 
       const description = result.value.toObject().get('description');
-      spec.description = description !== null ? description.toString() : null;
+      spec.description = description !== null ? description.toString() : '';
 
       const image = result.value.toObject().get('image');
-      spec.image = image !== null ? image.toString() : null;
+      spec.image = image !== null ? image.toString() : '';
 
       const expiresAtTimestamp = result.value.toObject().get('expiresAt');
       spec.expiresAt = expiresAtTimestamp !== null ? expiresAtTimestamp.toBigInt() : null;

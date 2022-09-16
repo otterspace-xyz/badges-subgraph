@@ -2,8 +2,8 @@
 
 type Raft @entity {
   id: ID!
-  name: String
-  description: String
+  name: String!
+  description: String!
   uri: String!
   owner: Bytes!
   tokenId: BigInt!
@@ -16,8 +16,8 @@ type Raft @entity {
 
 type BadgeSpec @entity {
   id: String!
-  name: String
-  description: String
+  name: String!
+  description: String!
   uri: String!
   image: String!
   expiresAt: BigInt
