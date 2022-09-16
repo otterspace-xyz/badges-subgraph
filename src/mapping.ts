@@ -1,7 +1,4 @@
-import {
-  SpecCreated,
-  Transfer as BadgeTransfer,
-} from '../generated/Badges/Badges';
+import { SpecCreated, Transfer as BadgeTransfer } from '../generated/Badges/Badges';
 import { Transfer as RaftTransfer, Raft as RaftContract } from '../generated/Raft/Raft';
 import { BadgeSpec, Raft } from '../generated/schema';
 import { log, json } from '@graphprotocol/graph-ts';
@@ -28,6 +25,7 @@ export function handleRaftTransfer(event: RaftTransfer): void {
     raft.totalBadgesCount = 0;
     raft.totalSpecsCount = 0;
     raft.createdAtTimestamp = timestamp;
+    raft.createdBy = event.params.from.toHexString();
 
     const raftContract = RaftContract.bind(event.address);
     raft.uri = raftContract.tokenURI(tokenId);
@@ -56,7 +54,7 @@ export function handleSpecCreated(event: SpecCreated): void {
   const cid = getCIDFromIPFSUri(event.params.specUri);
   const uri = appendMetadataPath(event.params.specUri);
   const raftAddress = event.params.raftAddress;
-  const raftTokenId = event.params.raftTokenId;``
+  const raftTokenId = event.params.raftTokenId;
   const raftID = getRaftID(raftTokenId, raftAddress);
   const timestamp = event.block.timestamp;
 
@@ -76,6 +74,12 @@ export function handleSpecCreated(event: SpecCreated): void {
 
       const description = result.value.toObject().get('description');
       spec.description = description !== null ? description.toString() : null;
+
+      const image = result.value.toObject().get('image');
+      spec.image = image !== null ? image.toString() : null;
+
+      const expiresAtTimestamp = result.value.toObject().get('expiresAt');
+      spec.expiresAtTimestamp = expiresAtTimestamp !== null ? expiresAtTimestamp.toBigInt() : null;
     } else {
       log.error('handleSpecCreated: error fetching metadata for {}', [cid]);
     }
@@ -104,5 +108,3 @@ export function handleBadgeTransfer(event: BadgeTransfer): void {
     handleBadgeBurned(badgeId, event);
   }
 }
-
-

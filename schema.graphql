@@ -11,6 +11,7 @@ type Raft @entity {
   totalSpecsCount: Int!
   totalBadgesCount: Int!
   createdAtTimestamp: BigInt!
+  createdBy: String!
 }
 
 type BadgeSpec @entity {
@@ -18,6 +19,8 @@ type BadgeSpec @entity {
   name: String
   description: String
   uri: String!
+  image: String
+  expiresAtTimestamp: BigInt
   raft: Raft!
   badges: [Badge!]! @derivedFrom(field: "spec")
   totalBadgesCount: Int!
