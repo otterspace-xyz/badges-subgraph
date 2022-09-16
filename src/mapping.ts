@@ -1,7 +1,7 @@
 import { SpecCreated, Transfer as BadgeTransfer } from '../generated/Badges/Badges';
 import { Transfer as RaftTransfer, Raft as RaftContract } from '../generated/Raft/Raft';
 import { BadgeSpec, Raft } from '../generated/schema';
-import { log, json } from '@graphprotocol/graph-ts';
+import { log, json, JSONValue } from '@graphprotocol/graph-ts';
 import { ipfs } from '@graphprotocol/graph-ts';
 import { getCIDFromIPFSUri, getBadgeID, getRaftID, appendMetadataPath } from './utils/helper';
 import { handleBadgeMinted, handleBadgeBurned } from './badges';
@@ -13,6 +13,10 @@ export function handleRaftTransfer(event: RaftTransfer): void {
   const tokenId = event.params.tokenId;
   const raftID = getRaftID(tokenId, event.address);
   const timestamp = event.block.timestamp;
+
+  let name = '';
+  let description = '';
+  let image = '';
 
   let raft = Raft.load(raftID);
   if (raft !== null) {
@@ -35,11 +39,9 @@ export function handleRaftTransfer(event: RaftTransfer): void {
     if (metadataBytes) {
       const result = json.try_fromBytes(metadataBytes);
       if (result.isOk) {
-        const name = result.value.toObject().get('name');
-        raft.name = name !== null ? name.toString() : '';
-
-        const description = result.value.toObject().get('description');
-        raft.description = description !== null ? description.toString() : '';
+        name = (result.value.toObject().get('name') as JSONValue).toString();
+        description = (result.value.toObject().get('description') as JSONValue).toString();
+        image = (result.value.toObject().get('image') as JSONValue).toString();
       } else {
         log.error('handleRaftTransfer: error fetching metadata for {}', [cid]);
       }
@@ -47,6 +49,11 @@ export function handleRaftTransfer(event: RaftTransfer): void {
       log.error('handleRaftTransfer: Invalid IPFS for cid {} for raftID {}', [cid, raftID]);
     }
   }
+
+  raft.name = name;
+  raft.description = description;
+  raft.image = image;
+
   raft.save();
 }
 
@@ -64,28 +71,32 @@ export function handleSpecCreated(event: SpecCreated): void {
   spec.createdAt = timestamp;
   spec.totalBadgesCount = 0;
 
+  let name = '';
+  let description = '';
+  let image = '';
+
   const cidPath = appendMetadataPath(cid);
   const metadataBytes = ipfs.cat(cidPath);
   if (metadataBytes) {
     const result = json.try_fromBytes(metadataBytes);
     if (result.isOk) {
-      const name = result.value.toObject().get('name');
-      spec.name = name !== null ? name.toString() : '';
+      name = (result.value.toObject().get('name') as JSONValue).toString();
+      description = (result.value.toObject().get('description') as JSONValue).toString();
+      image = (result.value.toObject().get('image') as JSONValue).toString();
 
-      const description = result.value.toObject().get('description');
-      spec.description = description !== null ? description.toString() : '';
-
-      const image = result.value.toObject().get('image');
-      spec.image = image !== null ? image.toString() : '';
-
-      const expiresAtTimestamp = result.value.toObject().get('expiresAt');
-      spec.expiresAt = expiresAtTimestamp !== null ? expiresAtTimestamp.toBigInt() : null;
+      // const expiresAtTimestamp = result.value.toObject().get('expiresAt');
+      // spec.expiresAt = expiresAtTimestamp !== null ? expiresAtTimestamp.toBigInt() : null;
     } else {
       log.error('handleSpecCreated: error fetching metadata for {}', [cid]);
     }
   } else {
     log.error('handleSpecCreated: Invalid cid {} for {}', [cid, uri]);
   }
+
+  spec.name = name;
+  spec.description = description;
+  spec.image = image;
+
   spec.save();
 
   const raft = Raft.load(raftID);

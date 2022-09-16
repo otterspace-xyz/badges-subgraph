@@ -5,6 +5,7 @@ type Raft @entity {
   name: String!
   description: String!
   uri: String!
+  image: String!
   owner: Bytes!
   tokenId: BigInt!
   specs: [BadgeSpec!]! @derivedFrom(field: "raft")
