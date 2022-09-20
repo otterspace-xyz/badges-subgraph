@@ -3,7 +3,7 @@ import { Transfer as RaftTransfer, Raft as RaftContract } from '../generated/Raf
 import { BadgeSpec, Raft } from '../generated/schema';
 import { log, json, JSONValue, BigInt, JSONValueKind } from '@graphprotocol/graph-ts';
 import { ipfs } from '@graphprotocol/graph-ts';
-import { getCIDFromIPFSUri, getBadgeID, getRaftID, appendMetadataPath } from './utils/helper';
+import { getCIDFromIPFSUri, getBadgeID, getRaftID, appendMetadataPath, getIPFSMetadataBytes } from './utils/helper';
 import { handleBadgeMinted, handleBadgeBurned } from './badges';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -35,8 +35,7 @@ export function handleRaftTransfer(event: RaftTransfer): void {
     raft.uri = raftContract.tokenURI(tokenId);
 
     const cid = getCIDFromIPFSUri(raft.uri);
-    const cidPath = appendMetadataPath(cid);
-    const metadataBytes = ipfs.cat(cidPath);
+    const metadataBytes = getIPFSMetadataBytes(cid)
     if (metadataBytes) {
       const result = json.try_fromBytes(metadataBytes);
       if (result.isOk) {

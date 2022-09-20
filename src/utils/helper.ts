@@ -1,4 +1,4 @@
-import { BigInt, Address, log } from '@graphprotocol/graph-ts';
+import { BigInt, Address, log, Bytes, ipfs } from '@graphprotocol/graph-ts';
 
 const raftsUrnNamespace = 'rafts';
 const badgesUrnNamespace = 'badges';
@@ -28,14 +28,20 @@ export function getCIDFromIPFSUri(uri: string): string {
 
 // returns a string representing the raftID in the format `rafts:raftAddress:raftTokenId`
 export function getRaftID(raftTokenId: BigInt, raftAddress: Address): string {
-  return raftsUrnNamespace
-    .concat(':')
-    .concat(raftTokenId.toString());
+  return raftsUrnNamespace.concat(':').concat(raftTokenId.toString());
 }
 
 // returns a string representing a unique badgeID in the format `badges:badgeAddress:badgeTokenId`
 export function getBadgeID(badgeTokenId: BigInt, badgeAddress: Address): string {
-  return badgesUrnNamespace
-    .concat(':')
-    .concat(badgeTokenId.toString());
+  return badgesUrnNamespace.concat(':').concat(badgeTokenId.toString());
+}
+
+export function getIPFSMetadataBytes(cid: string): Bytes | null {
+  let metadataBytes = ipfs.cat(cid);
+  if (!metadataBytes) {
+    const cidPath = appendMetadataPath(cid);
+    metadataBytes = ipfs.cat(cidPath);
+  }
+
+  return metadataBytes;
 }
