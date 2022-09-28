@@ -1,9 +1,19 @@
 import { SpecCreated, Transfer as BadgeTransfer } from '../generated/Badges/Badges';
-import { Transfer as RaftTransfer, Raft as RaftContract } from '../generated/Raft/Raft';
+import {
+  Transfer as RaftTransfer,
+  Raft as RaftContract,
+  SetTokenURICall,
+} from '../generated/Raft/Raft';
 import { BadgeSpec, Raft } from '../generated/schema';
 import { log, json, JSONValue, BigInt, JSONValueKind } from '@graphprotocol/graph-ts';
 import { ipfs } from '@graphprotocol/graph-ts';
-import { getCIDFromIPFSUri, getBadgeID, getRaftID, appendMetadataPath, getIPFSMetadataBytes } from './utils/helper';
+import {
+  getCIDFromIPFSUri,
+  getBadgeID,
+  getRaftID,
+  appendMetadataPath,
+  getIPFSMetadataBytes,
+} from './utils/helper';
 import { handleBadgeMinted, handleBadgeBurned } from './badges';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -35,7 +45,7 @@ export function handleRaftTransfer(event: RaftTransfer): void {
     raft.uri = raftContract.tokenURI(tokenId);
 
     const cid = getCIDFromIPFSUri(raft.uri);
-    const metadataBytes = getIPFSMetadataBytes(cid)
+    const metadataBytes = getIPFSMetadataBytes(cid);
     if (metadataBytes) {
       const result = json.try_fromBytes(metadataBytes);
       if (result.isOk) {
@@ -125,5 +135,34 @@ export function handleBadgeTransfer(event: BadgeTransfer): void {
     handleBadgeMinted(badgeId, event);
   } else {
     handleBadgeBurned(badgeId, event);
+  }
+}
+
+export function handleSetTokenURI(call: SetTokenURICall): void {
+  const tokenId = call.inputs.tokenId;
+  const raftAddress = call.to;
+  const raftID = getRaftID(tokenId, raftAddress);
+  const raft = Raft.load(raftID);
+
+  if (raft !== null) {
+    raft.uri = call.inputs.uri;
+
+    const cid = getCIDFromIPFSUri(raft.uri);
+    const metadataBytes = getIPFSMetadataBytes(cid);
+    if (metadataBytes) {
+      const result = json.try_fromBytes(metadataBytes);
+      if (result.isOk) {
+        raft.name = (result.value.toObject().get('name') as JSONValue).toString();
+        raft.description = (result.value.toObject().get('description') as JSONValue).toString();
+        raft.image = (result.value.toObject().get('image') as JSONValue).toString();
+      } else {
+        log.error('handleSetTokenURI: error fetching metadata for {}', [cid]);
+      }
+    } else {
+      log.error('handleSetTokenURI: Invalid IPFS for cid {} for raftID {}', [cid, raftID]);
+    }
+    raft.save();
+  } else {
+    log.error('handleSetTokenURI: Raft {} not found. Raft entity was not updated', [raftID]);
   }
 }

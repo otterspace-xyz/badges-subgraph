@@ -25,6 +25,9 @@ dataSources:
       eventHandlers:
         - event: Transfer(indexed address,indexed address,indexed uint256)
           handler: handleRaftTransfer
+      callHandlers:
+        - function: setTokenURI(uint256,string)
+          handler: handleSetTokenURI
       file: ./src/mapping.ts
   - kind: ethereum/contract
     name: Badges
