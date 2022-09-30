@@ -74,12 +74,14 @@ export function handleSpecCreated(event: SpecCreated): void {
   const raftTokenId = event.params.raftTokenId;
   const raftID = getRaftID(raftTokenId, raftAddress);
   const timestamp = event.block.timestamp;
+  const createdBy = event.params.to.toHexString();
 
   let spec = new BadgeSpec(cid);
   spec.uri = uri;
   spec.raft = raftID;
   spec.createdAt = timestamp;
   spec.totalBadgesCount = 0;
+  spec.createdBy = createdBy;
 
   let name = '';
   let description = '';

@@ -26,6 +26,7 @@ type BadgeSpec @entity {
   badges: [Badge!]! @derivedFrom(field: "spec")
   totalBadgesCount: Int!
   createdAt: BigInt!
+  createdBy: String!
 }
 
 type Badge @entity {
