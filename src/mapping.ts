@@ -2,10 +2,10 @@ import { SpecCreated, Transfer as BadgeTransfer } from '../generated/Badges/Badg
 import {
   Transfer as RaftTransfer,
   Raft as RaftContract,
-  SetTokenURICall,
+  MetadataUpdate,
 } from '../generated/Raft/Raft';
 import { BadgeSpec, Raft } from '../generated/schema';
-import { log, json, JSONValue, BigInt, JSONValueKind } from '@graphprotocol/graph-ts';
+import { log, json, JSONValue, JSONValueKind } from '@graphprotocol/graph-ts';
 import { ipfs } from '@graphprotocol/graph-ts';
 import {
   getCIDFromIPFSUri,
@@ -140,14 +140,15 @@ export function handleBadgeTransfer(event: BadgeTransfer): void {
   }
 }
 
-export function handleSetTokenURI(call: SetTokenURICall): void {
-  const tokenId = call.inputs.tokenId;
-  const raftAddress = call.to;
+export function handleMetadataUpdate(event: MetadataUpdate): void {
+  const tokenId = event.params.tokenId;
+  const raftAddress = event.address;
   const raftID = getRaftID(tokenId, raftAddress);
   const raft = Raft.load(raftID);
 
   if (raft !== null) {
-    raft.uri = call.inputs.uri;
+    const raftContract = RaftContract.bind(event.address);
+    raft.uri = raftContract.tokenURI(tokenId);
 
     const cid = getCIDFromIPFSUri(raft.uri);
     const metadataBytes = getIPFSMetadataBytes(cid);
@@ -158,7 +159,7 @@ export function handleSetTokenURI(call: SetTokenURICall): void {
         raft.description = (result.value.toObject().get('description') as JSONValue).toString();
         raft.image = (result.value.toObject().get('image') as JSONValue).toString();
       } else {
-        log.error('handleSetTokenURI: error fetching metadata for {}', [cid]);
+        log.error('handleSetTokenURI: error fetching the metadata for {}', [cid]);
       }
     } else {
       log.error('handleSetTokenURI: Invalid IPFS for cid {} for raftID {}', [cid, raftID]);
