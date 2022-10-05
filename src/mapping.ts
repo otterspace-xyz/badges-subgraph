@@ -58,11 +58,11 @@ export function handleRaftTransfer(event: RaftTransfer): void {
     } else {
       log.error('handleRaftTransfer: Invalid IPFS for cid {} for raftID {}', [cid, raftID]);
     }
-  }
 
-  raft.name = name;
-  raft.description = description;
-  raft.image = image;
+    raft.name = name;
+    raft.description = description;
+    raft.image = image;
+  }
 
   raft.save();
 }
