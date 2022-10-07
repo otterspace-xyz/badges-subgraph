@@ -50,4 +50,6 @@ dataSources:
           handler: handleSpecCreated
         - event: Transfer(indexed address,indexed address,indexed uint256)
           handler: handleBadgeTransfer
+        - event: BadgeRevoked(indexed uint256,indexed address,indexed uint8)
+          handler: handleBadgeRevoked
       file: ./src/mapping.ts

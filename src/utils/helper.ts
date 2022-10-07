@@ -45,3 +45,13 @@ export function getIPFSMetadataBytes(cid: string): Bytes | null {
 
   return metadataBytes;
 }
+
+export function getReasonString(reasonCode: u32): string {
+  switch (reasonCode) {
+    case 1:
+      return 'hello';
+
+    default:
+      return 'other';
+  }
+}

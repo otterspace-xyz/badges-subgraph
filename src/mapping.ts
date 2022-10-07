@@ -1,10 +1,15 @@
-import { SpecCreated, Transfer as BadgeTransfer } from '../generated/Badges/Badges';
+import {
+  BadgeReinstated,
+  BadgeRevoked,
+  SpecCreated,
+  Transfer as BadgeTransfer,
+} from '../generated/Badges/Badges';
 import {
   Transfer as RaftTransfer,
   Raft as RaftContract,
   MetadataUpdate,
 } from '../generated/Raft/Raft';
-import { BadgeSpec, Raft } from '../generated/schema';
+import { Badge, BadgeSpec, Raft } from '../generated/schema';
 import { log, json, JSONValue, JSONValueKind } from '@graphprotocol/graph-ts';
 import { ipfs } from '@graphprotocol/graph-ts';
 import {
@@ -13,6 +18,7 @@ import {
   getRaftID,
   appendMetadataPath,
   getIPFSMetadataBytes,
+  getReasonString,
 } from './utils/helper';
 import { handleBadgeMinted, handleBadgeBurned } from './badges';
 
@@ -167,5 +173,45 @@ export function handleMetadataUpdate(event: MetadataUpdate): void {
     raft.save();
   } else {
     log.error('handleSetTokenURI: Raft {} not found. Raft entity was not updated', [raftID]);
+  }
+}
+
+export function handleBadgeRevoked(event: BadgeRevoked): void {
+  const tokenId = event.params.tokenId;
+  const badgeAddress = event.address;
+  const badgeId = getBadgeID(tokenId, badgeAddress);
+  const timestamp = event.block.timestamp;
+  const reasonCode = event.params.reason;
+  const reason = getReasonString(reasonCode);
+
+  updateBadgeRevocationStatus('handleBadgeRevoked', badgeId, timestamp.toU32(), reason);
+}
+
+export function handleBadgeReinstated(event: BadgeReinstated): void {
+  const tokenId = event.params.tokenId;
+  const badgeAddress = event.address;
+  const badgeId = getBadgeID(tokenId, badgeAddress);
+
+  updateBadgeRevocationStatus('handleBadgeReinstated', badgeId, 0, '');
+}
+
+function updateBadgeRevocationStatus(
+  context: string,
+  badgeId: string,
+  timestamp: number,
+  reason: string,
+) {
+  const badge = Badge.load(badgeId);
+  if (badge !== null) {
+    // todo: not sure about storing it like this. Maybe we need a better way to store this
+    // todo: still not capturing revokedBy
+    badge.revokedAt = timestamp;
+    badge.revokedReason = reason;
+    badge.save();
+  } else {
+    log.error('{}: Badge {} not found. Badge entity was not updated with revocation details', [
+      context,
+      badgeId,
+    ]);
   }
 }
