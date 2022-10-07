@@ -38,7 +38,7 @@ export function handleRaftTransfer(event: RaftTransfer): void {
     raft.tokenId = tokenId;
     raft.totalBadgesCount = 0;
     raft.totalSpecsCount = 0;
-    raft.createdAt = timestamp;
+    raft.createdAt = timestamp.toI32();
     raft.createdBy = event.params.from.toHexString();
 
     const raftContract = RaftContract.bind(event.address);
@@ -79,7 +79,7 @@ export function handleSpecCreated(event: SpecCreated): void {
   let spec = new BadgeSpec(cid);
   spec.uri = uri;
   spec.raft = raftID;
-  spec.createdAt = timestamp;
+  spec.createdAt = timestamp.toI32();
   spec.totalBadgesCount = 0;
   spec.createdBy = createdBy;
 
