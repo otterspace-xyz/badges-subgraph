@@ -71,8 +71,7 @@ export function handleRaftTransfer(event: RaftTransfer): void {
   raft.save();
 }
 
-// TODO: fix any type
-function loadDataFromIPFSAndSave(cid: string, spec: any, uri: string, context: string): void {
+function loadDataFromIPFSAndSave(cid: string, spec: BadgeSpec, uri: string, context: string): void {
   let name = '';
   let description = '';
   let image = '';
@@ -109,6 +108,7 @@ function loadDataFromIPFSAndSave(cid: string, spec: any, uri: string, context: s
   if (name === '' || description === '' || image === '') {
     log.error('handleSpecCreated: missing values {}', [name, description, image]);
   }
+
   spec.name = name;
   spec.description = description;
   spec.image = image;
@@ -121,8 +121,9 @@ export function handleRefreshMetadata(event: RefreshMetadata): void {
   const cid = getCIDFromIPFSUri(event.params.specUri);
   const spec = BadgeSpec.load(cid);
   const uri = appendMetadataPath(event.params.specUri);
-
-  loadDataFromIPFSAndSave(cid, spec, uri, 'handleRefreshMetadata');
+  if (spec !== null) {
+    loadDataFromIPFSAndSave(cid, spec, uri, 'handleRefreshMetadata');
+  }
 }
 
 export function handleSpecCreated(event: SpecCreated): void {
@@ -141,7 +142,9 @@ export function handleSpecCreated(event: SpecCreated): void {
   spec.totalBadgesCount = 0;
   spec.createdBy = createdBy;
 
-  loadDataFromIPFSAndSave(cid, spec, uri, 'handleSpecCreated');
+  if (spec !== null) {
+    loadDataFromIPFSAndSave(cid, spec, uri, 'handleSpecCreated');
+  }
 
   const raft = Raft.load(raftID);
   if (raft !== null) {
