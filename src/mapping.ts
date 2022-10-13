@@ -1,10 +1,14 @@
-import { SpecCreated, Transfer as BadgeTransfer } from '../generated/Badges/Badges';
+import {
+  SpecCreated,
+  Transfer as BadgeTransfer,
+  RefreshMetadata,
+} from '../generated/Badges/Badges';
 import {
   Transfer as RaftTransfer,
   Raft as RaftContract,
   MetadataUpdate,
 } from '../generated/Raft/Raft';
-import { BadgeSpec, Raft } from '../generated/schema';
+import { Badge, BadgeSpec, Raft } from '../generated/schema';
 import { log, json, JSONValue, JSONValueKind } from '@graphprotocol/graph-ts';
 import { ipfs } from '@graphprotocol/graph-ts';
 import {
@@ -67,6 +71,60 @@ export function handleRaftTransfer(event: RaftTransfer): void {
   raft.save();
 }
 
+// TODO: fix any type
+function loadDataFromIPFSAndSave(cid: string, spec: any, uri: string, context: string): void {
+  let name = '';
+  let description = '';
+  let image = '';
+  let expiresAt: string | null = null;
+
+  const cidPath = appendMetadataPath(cid);
+  const metadataBytes = ipfs.cat(cidPath);
+  if (metadataBytes) {
+    const result = json.try_fromBytes(metadataBytes);
+    if (result.isOk) {
+      name = (result.value.toObject().get('name') as JSONValue).toString();
+      description = (result.value.toObject().get('description') as JSONValue).toString();
+      image = (result.value.toObject().get('image') as JSONValue).toString();
+      log.debug('loadDataFromIPFSAndSave: values {}', [name, description, image]);
+
+      const properties = result.value.toObject().get('properties');
+      const expiresAtJsonValue =
+        properties !== null ? properties.toObject().get('expiresAt') : null;
+
+      expiresAt =
+        expiresAtJsonValue !== null && expiresAtJsonValue.kind === JSONValueKind.STRING
+          ? expiresAtJsonValue.toString()
+          : null;
+    } else {
+      log.error('loadDataFromIPFSAndSave: error fetching metadata for {}', [cid, context]);
+    }
+  } else {
+    log.error('loadDataFromIPFSAndSave: Invalid cid {} for {}', [cid, uri, context]);
+  }
+
+  // Consider retrying if the metadata is not available.
+
+  // to begin with let's at least log some stuff out if there's a problem so that we can see it in the subgraph explorer logs
+  if (name === '' || description === '' || image === '') {
+    log.error('handleSpecCreated: missing values {}', [name, description, image]);
+  }
+  spec.name = name;
+  spec.description = description;
+  spec.image = image;
+  spec.expiresAt = expiresAt;
+
+  spec.save();
+}
+
+export function handleRefreshMetadata(event: RefreshMetadata): void {
+  const cid = getCIDFromIPFSUri(event.params.specUri);
+  const spec = BadgeSpec.load(cid);
+  const uri = appendMetadataPath(event.params.specUri);
+
+  loadDataFromIPFSAndSave(cid, spec, uri, 'handleRefreshMetadata');
+}
+
 export function handleSpecCreated(event: SpecCreated): void {
   const cid = getCIDFromIPFSUri(event.params.specUri);
   const uri = appendMetadataPath(event.params.specUri);
@@ -83,41 +141,7 @@ export function handleSpecCreated(event: SpecCreated): void {
   spec.totalBadgesCount = 0;
   spec.createdBy = createdBy;
 
-  let name = '';
-  let description = '';
-  let image = '';
-  let expiresAt: string | null = null;
-
-  const cidPath = appendMetadataPath(cid);
-  const metadataBytes = ipfs.cat(cidPath);
-  if (metadataBytes) {
-    const result = json.try_fromBytes(metadataBytes);
-    if (result.isOk) {
-      name = (result.value.toObject().get('name') as JSONValue).toString();
-      description = (result.value.toObject().get('description') as JSONValue).toString();
-      image = (result.value.toObject().get('image') as JSONValue).toString();
-
-      const properties = result.value.toObject().get('properties');
-      const expiresAtJsonValue =
-        properties !== null ? properties.toObject().get('expiresAt') : null;
-
-      expiresAt =
-        expiresAtJsonValue !== null && expiresAtJsonValue.kind === JSONValueKind.STRING
-          ? expiresAtJsonValue.toString()
-          : null;
-    } else {
-      log.error('handleSpecCreated: error fetching metadata for {}', [cid]);
-    }
-  } else {
-    log.error('handleSpecCreated: Invalid cid {} for {}', [cid, uri]);
-  }
-
-  spec.name = name;
-  spec.description = description;
-  spec.image = image;
-  spec.expiresAt = expiresAt;
-
-  spec.save();
+  loadDataFromIPFSAndSave(cid, spec, uri, 'handleSpecCreated');
 
   const raft = Raft.load(raftID);
   if (raft !== null) {
@@ -140,6 +164,7 @@ export function handleBadgeTransfer(event: BadgeTransfer): void {
   }
 }
 
+// this runs when `setTokenUri` is called on the contract
 export function handleMetadataUpdate(event: MetadataUpdate): void {
   const tokenId = event.params.tokenId;
   const raftAddress = event.address;
