@@ -9,6 +9,10 @@ export function appendMetadataPath(uri: string): string {
   return uri.concat(metadataPart);
 }
 
+export function getFullMetadataPath(cid: string): string {
+  return `ipfs://${cid}${metadataPart}`;
+}
+
 // returns a string that is a CID extracted from the IPFS uri
 export function getCIDFromIPFSUri(uri: string): string {
   let cid = '';

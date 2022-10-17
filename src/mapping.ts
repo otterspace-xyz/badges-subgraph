@@ -16,6 +16,7 @@ import {
   getBadgeID,
   getRaftID,
   appendMetadataPath,
+  getFullMetadataPath,
   getIPFSMetadataBytes,
 } from './utils/helper';
 import { handleBadgeMinted, handleBadgeBurned } from './badges';
@@ -73,7 +74,7 @@ export function handleRaftTransfer(event: RaftTransfer): void {
 
 export function handleSpecCreated(event: SpecCreated): void {
   const cid = getCIDFromIPFSUri(event.params.specUri);
-  const uri = appendMetadataPath(event.params.specUri);
+  const uri = getFullMetadataPath(cid);
   const raftAddress = event.params.raftAddress;
   const raftTokenId = event.params.raftTokenId;
   const raftID = getRaftID(raftTokenId, raftAddress);
@@ -86,6 +87,10 @@ export function handleSpecCreated(event: SpecCreated): void {
   spec.createdAt = timestamp.toI32();
   spec.totalBadgesCount = 0;
   spec.createdBy = createdBy;
+  spec.name = '';
+  spec.description = '';
+  spec.expiresAt = null;
+  spec.image = '';
   spec.save();
 
   updateBadgeSpecMetadata(cid);
