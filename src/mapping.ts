@@ -86,10 +86,9 @@ export function handleSpecCreated(event: SpecCreated): void {
   spec.createdAt = timestamp.toI32();
   spec.totalBadgesCount = 0;
   spec.createdBy = createdBy;
+  spec.save();
 
-  if (spec !== null) {
-    loadDataFromIPFSAndSave(cid, spec, uri, 'handleSpecCreated');
-  }
+  updateBadgeSpecMetadata(cid);
 
   const raft = Raft.load(raftID);
   if (raft !== null) {
@@ -102,11 +101,7 @@ export function handleSpecCreated(event: SpecCreated): void {
 
 export function handleRefreshMetadata(event: RefreshMetadata): void {
   const cid = getCIDFromIPFSUri(event.params.specUri);
-  const spec = BadgeSpec.load(cid);
-  const uri = appendMetadataPath(event.params.specUri);
-  if (spec !== null) {
-    loadDataFromIPFSAndSave(cid, spec, uri, 'handleRefreshMetadata');
-  }
+  updateBadgeSpecMetadata(cid);
 }
 
 export function handleBadgeTransfer(event: BadgeTransfer): void {
@@ -152,48 +147,48 @@ export function handleMetadataUpdate(event: MetadataUpdate): void {
   }
 }
 
-function loadDataFromIPFSAndSave(cid: string, spec: BadgeSpec, uri: string, context: string): void {
+function updateBadgeSpecMetadata(cid: string): void {
   let name = '';
   let description = '';
   let image = '';
   let expiresAt: string | null = null;
 
-  const cidPath = appendMetadataPath(cid);
-  const metadataBytes = ipfs.cat(cidPath);
-  if (metadataBytes) {
-    const result = json.try_fromBytes(metadataBytes);
-    if (result.isOk) {
-      name = (result.value.toObject().get('name') as JSONValue).toString();
-      description = (result.value.toObject().get('description') as JSONValue).toString();
-      image = (result.value.toObject().get('image') as JSONValue).toString();
-      log.debug('loadDataFromIPFSAndSave: values {}', [name, description, image]);
+  const spec = BadgeSpec.load(cid);
+  if (spec !== null) {
+    const cidPath = appendMetadataPath(cid);
+    const metadataBytes = ipfs.cat(cidPath);
+    if (metadataBytes) {
+      const result = json.try_fromBytes(metadataBytes);
+      if (result.isOk) {
+        name = (result.value.toObject().get('name') as JSONValue).toString();
+        description = (result.value.toObject().get('description') as JSONValue).toString();
+        image = (result.value.toObject().get('image') as JSONValue).toString();
+        log.debug('updateBadgeSpecMetadata: values {}', [name, description, image]);
 
-      const properties = result.value.toObject().get('properties');
-      const expiresAtJsonValue =
-        properties !== null ? properties.toObject().get('expiresAt') : null;
+        const properties = result.value.toObject().get('properties');
+        const expiresAtJsonValue =
+          properties !== null ? properties.toObject().get('expiresAt') : null;
 
-      expiresAt =
-        expiresAtJsonValue !== null && expiresAtJsonValue.kind === JSONValueKind.STRING
-          ? expiresAtJsonValue.toString()
-          : null;
+        expiresAt =
+          expiresAtJsonValue !== null && expiresAtJsonValue.kind === JSONValueKind.STRING
+            ? expiresAtJsonValue.toString()
+            : null;
+      } else {
+        log.error('updateBadgeSpecMetadata: error fetching metadata for {}', [cid]);
+      }
     } else {
-      log.error('loadDataFromIPFSAndSave: error fetching metadata for {}', [cid, context]);
+      log.error('updateBadgeSpecMetadata: Invalid cid {}', [cid]);
     }
+
+    spec.name = name;
+    spec.description = description;
+    spec.image = image;
+    spec.expiresAt = expiresAt;
+
+    spec.save();
   } else {
-    log.error('loadDataFromIPFSAndSave: Invalid cid {} for {}', [cid, uri, context]);
+    log.error('updateBadgeSpecMetadata: BadgeSpec {} not found. BadgeSpec entity was not updated', [
+      cid,
+    ]);
   }
-
-  // Consider retrying if the metadata is not available.
-
-  // to begin with let's at least log some stuff out if there's a problem so that we can see it in the subgraph explorer logs
-  if (name === '' || description === '' || image === '') {
-    log.error('handleSpecCreated: missing values {}', [name, description, image]);
-  }
-
-  spec.name = name;
-  spec.description = description;
-  spec.image = image;
-  spec.expiresAt = expiresAt;
-
-  spec.save();
 }
