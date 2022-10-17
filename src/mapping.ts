@@ -12,6 +12,7 @@ import {
   getBadgeID,
   getRaftID,
   appendMetadataPath,
+  getFullMetadataPath,
   getIPFSMetadataBytes,
 } from './utils/helper';
 import { handleBadgeMinted, handleBadgeBurned } from './badges';
@@ -69,7 +70,7 @@ export function handleRaftTransfer(event: RaftTransfer): void {
 
 export function handleSpecCreated(event: SpecCreated): void {
   const cid = getCIDFromIPFSUri(event.params.specUri);
-  const uri = appendMetadataPath(event.params.specUri);
+  const uri = getFullMetadataPath(cid);
   const raftAddress = event.params.raftAddress;
   const raftTokenId = event.params.raftTokenId;
   const raftID = getRaftID(raftTokenId, raftAddress);
@@ -109,7 +110,7 @@ export function handleSpecCreated(event: SpecCreated): void {
       log.error('handleSpecCreated: error fetching metadata for {}', [cid]);
     }
   } else {
-    log.error('handleSpecCreated: Invalid cid {} for {}', [cid, uri]);
+    log.error('handleSpecCreated: Invalid cid {}, path {} for {}', [cid, cidPath, uri]);
   }
 
   spec.name = name;
