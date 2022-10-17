@@ -22,35 +22,6 @@ import { handleBadgeMinted, handleBadgeBurned } from './badges';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
-export function handleSpecCreated(event: SpecCreated): void {
-  const cid = getCIDFromIPFSUri(event.params.specUri);
-  const uri = appendMetadataPath(event.params.specUri);
-  const raftAddress = event.params.raftAddress;
-  const raftTokenId = event.params.raftTokenId;
-  const raftID = getRaftID(raftTokenId, raftAddress);
-  const timestamp = event.block.timestamp;
-  const createdBy = event.params.to.toHexString();
-
-  let spec = new BadgeSpec(cid);
-  spec.uri = uri;
-  spec.raft = raftID;
-  spec.createdAt = timestamp.toI32();
-  spec.totalBadgesCount = 0;
-  spec.createdBy = createdBy;
-
-  if (spec !== null) {
-    loadDataFromIPFSAndSave(cid, spec, uri, 'handleSpecCreated');
-  }
-
-  const raft = Raft.load(raftID);
-  if (raft !== null) {
-    raft.totalSpecsCount += 1;
-    raft.save();
-  } else {
-    log.error('handleSpecCreated: Raft {} not found. Raft entity was not updated', [raftID]);
-  }
-}
-
 export function handleRaftTransfer(event: RaftTransfer): void {
   const to = event.params.to;
   const tokenId = event.params.tokenId;
@@ -98,6 +69,35 @@ export function handleRaftTransfer(event: RaftTransfer): void {
   }
 
   raft.save();
+}
+
+export function handleSpecCreated(event: SpecCreated): void {
+  const cid = getCIDFromIPFSUri(event.params.specUri);
+  const uri = appendMetadataPath(event.params.specUri);
+  const raftAddress = event.params.raftAddress;
+  const raftTokenId = event.params.raftTokenId;
+  const raftID = getRaftID(raftTokenId, raftAddress);
+  const timestamp = event.block.timestamp;
+  const createdBy = event.params.to.toHexString();
+
+  let spec = new BadgeSpec(cid);
+  spec.uri = uri;
+  spec.raft = raftID;
+  spec.createdAt = timestamp.toI32();
+  spec.totalBadgesCount = 0;
+  spec.createdBy = createdBy;
+
+  if (spec !== null) {
+    loadDataFromIPFSAndSave(cid, spec, uri, 'handleSpecCreated');
+  }
+
+  const raft = Raft.load(raftID);
+  if (raft !== null) {
+    raft.totalSpecsCount += 1;
+    raft.save();
+  } else {
+    log.error('handleSpecCreated: Raft {} not found. Raft entity was not updated', [raftID]);
+  }
 }
 
 export function handleRefreshMetadata(event: RefreshMetadata): void {
@@ -151,7 +151,6 @@ export function handleMetadataUpdate(event: MetadataUpdate): void {
     log.error('handleSetTokenURI: Raft {} not found. Raft entity was not updated', [raftID]);
   }
 }
-
 
 function loadDataFromIPFSAndSave(cid: string, spec: BadgeSpec, uri: string, context: string): void {
   let name = '';
