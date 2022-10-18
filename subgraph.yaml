@@ -50,4 +50,6 @@ dataSources:
           handler: handleSpecCreated
         - event: Transfer(indexed address,indexed address,indexed uint256)
           handler: handleBadgeTransfer
+        - event: RefreshMetadata(string)
+          handler: handleRefreshMetadata
       file: ./src/mapping.ts

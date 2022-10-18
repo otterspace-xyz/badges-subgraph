@@ -1,10 +1,14 @@
-import { SpecCreated, Transfer as BadgeTransfer } from '../generated/Badges/Badges';
+import {
+  SpecCreated,
+  Transfer as BadgeTransfer,
+  RefreshMetadata,
+} from '../generated/Badges/Badges';
 import {
   Transfer as RaftTransfer,
   Raft as RaftContract,
   MetadataUpdate,
 } from '../generated/Raft/Raft';
-import { BadgeSpec, Raft } from '../generated/schema';
+import { Badge, BadgeSpec, Raft } from '../generated/schema';
 import { log, json, JSONValue, JSONValueKind } from '@graphprotocol/graph-ts';
 import { ipfs } from '@graphprotocol/graph-ts';
 import {
@@ -83,42 +87,13 @@ export function handleSpecCreated(event: SpecCreated): void {
   spec.createdAt = timestamp.toI32();
   spec.totalBadgesCount = 0;
   spec.createdBy = createdBy;
-
-  let name = '';
-  let description = '';
-  let image = '';
-  let expiresAt: string | null = null;
-
-  const cidPath = appendMetadataPath(cid);
-  const metadataBytes = ipfs.cat(cidPath);
-  if (metadataBytes) {
-    const result = json.try_fromBytes(metadataBytes);
-    if (result.isOk) {
-      name = (result.value.toObject().get('name') as JSONValue).toString();
-      description = (result.value.toObject().get('description') as JSONValue).toString();
-      image = (result.value.toObject().get('image') as JSONValue).toString();
-
-      const properties = result.value.toObject().get('properties');
-      const expiresAtJsonValue =
-        properties !== null ? properties.toObject().get('expiresAt') : null;
-
-      expiresAt =
-        expiresAtJsonValue !== null && expiresAtJsonValue.kind === JSONValueKind.STRING
-          ? expiresAtJsonValue.toString()
-          : null;
-    } else {
-      log.error('handleSpecCreated: error fetching metadata for {}', [cid]);
-    }
-  } else {
-    log.error('handleSpecCreated: Invalid cid {}, path {} for {}', [cid, cidPath, uri]);
-  }
-
-  spec.name = name;
-  spec.description = description;
-  spec.image = image;
-  spec.expiresAt = expiresAt;
-
+  spec.name = '';
+  spec.description = '';
+  spec.expiresAt = null;
+  spec.image = '';
   spec.save();
+
+  updateBadgeSpecMetadata(cid);
 
   const raft = Raft.load(raftID);
   if (raft !== null) {
@@ -127,6 +102,11 @@ export function handleSpecCreated(event: SpecCreated): void {
   } else {
     log.error('handleSpecCreated: Raft {} not found. Raft entity was not updated', [raftID]);
   }
+}
+
+export function handleRefreshMetadata(event: RefreshMetadata): void {
+  const cid = getCIDFromIPFSUri(event.params.specUri);
+  updateBadgeSpecMetadata(cid);
 }
 
 export function handleBadgeTransfer(event: BadgeTransfer): void {
@@ -141,6 +121,7 @@ export function handleBadgeTransfer(event: BadgeTransfer): void {
   }
 }
 
+// this runs when `setTokenUri` is called on the contract
 export function handleMetadataUpdate(event: MetadataUpdate): void {
   const tokenId = event.params.tokenId;
   const raftAddress = event.address;
@@ -168,5 +149,51 @@ export function handleMetadataUpdate(event: MetadataUpdate): void {
     raft.save();
   } else {
     log.error('handleSetTokenURI: Raft {} not found. Raft entity was not updated', [raftID]);
+  }
+}
+
+function updateBadgeSpecMetadata(cid: string): void {
+  let name = '';
+  let description = '';
+  let image = '';
+  let expiresAt: string | null = null;
+
+  const spec = BadgeSpec.load(cid);
+  if (spec !== null) {
+    const cidPath = appendMetadataPath(cid);
+    const metadataBytes = ipfs.cat(cidPath);
+    if (metadataBytes) {
+      const result = json.try_fromBytes(metadataBytes);
+      if (result.isOk) {
+        name = (result.value.toObject().get('name') as JSONValue).toString();
+        description = (result.value.toObject().get('description') as JSONValue).toString();
+        image = (result.value.toObject().get('image') as JSONValue).toString();
+        log.debug('updateBadgeSpecMetadata: values {}', [name, description, image]);
+
+        const properties = result.value.toObject().get('properties');
+        const expiresAtJsonValue =
+          properties !== null ? properties.toObject().get('expiresAt') : null;
+
+        expiresAt =
+          expiresAtJsonValue !== null && expiresAtJsonValue.kind === JSONValueKind.STRING
+            ? expiresAtJsonValue.toString()
+            : null;
+      } else {
+        log.error('updateBadgeSpecMetadata: error fetching metadata for {}', [cid]);
+      }
+    } else {
+      log.error('updateBadgeSpecMetadata: Invalid cid {}', [cid]);
+    }
+
+    spec.name = name;
+    spec.description = description;
+    spec.image = image;
+    spec.expiresAt = expiresAt;
+
+    spec.save();
+  } else {
+    log.error('updateBadgeSpecMetadata: BadgeSpec {} not found. BadgeSpec entity was not updated', [
+      cid,
+    ]);
   }
 }
