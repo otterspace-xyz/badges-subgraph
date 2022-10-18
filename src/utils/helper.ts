@@ -72,11 +72,16 @@ export function getIPFSMetadataBytes(cid: string): Bytes | null {
 
 export function getReasonString(reasonCode: u32): string {
   switch (reasonCode) {
+    case 0:
+      return 'abuse';
     case 1:
-      return 'hello';
-
-    default:
+      return 'left community';
+    case 2:
+      return 'tenure ended';
+    case 3:
       return 'other';
+    default:
+      return '';
   }
 }
 

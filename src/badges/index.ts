@@ -40,17 +40,3 @@ export function handleBadgeMinted(badgeId: string, event: BadgeTransfer): void {
     log.error('handleBadgeMinted: Spec {} not found. Badge entity was not created', [specID]);
   }
 }
-export function handleBadgeBurned(badgeId: string, event: BadgeTransfer): void {
-  const timestamp = event.block.timestamp;
-
-  const badge = Badge.load(badgeId);
-  if (badge !== null) {
-    badge.burnedAt = timestamp.toU32();
-    badge.save();
-  } else {
-    log.error(
-      'handleBadgeBurned: Badge {} not found. Badge entity was not updated with burnedAtTimestamp',
-      [badgeId],
-    );
-  }
-}
