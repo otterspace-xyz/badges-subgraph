@@ -21,6 +21,7 @@ import {
 import { handleBadgeMinted, handleBadgeBurned } from './badges';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+const excludedCids = ['test',"Dasha's cool raft token"];
 
 export function handleRaftTransfer(event: RaftTransfer): void {
   const to = event.params.to;
@@ -49,7 +50,7 @@ export function handleRaftTransfer(event: RaftTransfer): void {
     let context = new DataSourceContext()
     context.setString('ipfsHash', cid);
     log.warning('--> make metadata {}', [cid])
-    if(cid != 'test') {
+    if(cid && !excludedCids.includes(cid)) {
       RaftMetadataTemplate.createWithContext(cid, context);
     }
   }
@@ -77,7 +78,7 @@ export function handleSpecCreated(event: SpecCreated): void {
   let context = new DataSourceContext()
   log.warning('--> make metadata {}', [cid])
   context.setString('ipfsHash', cid);
-  if(cid != 'test') {
+  if(cid && !excludedCids.includes(cid)) {
     SpecMetadataTemplate.createWithContext(cid, context);
   }
   spec.save()
@@ -118,7 +119,7 @@ export function handleMetadataUpdate(event: MetadataUpdate): void {
     log.warning('--> make metadata {}', [cid])
     let context = new DataSourceContext()
     context.setString('ipfsHash', cid);
-    if(cid != 'test') {
+    if(cid && !excludedCids.includes(cid)) {
       RaftMetadataTemplate.createWithContext(cid, context);
     }
     raft.save()
