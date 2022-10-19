@@ -51,3 +51,30 @@ dataSources:
         - event: Transfer(indexed address,indexed address,indexed uint256)
           handler: handleBadgeTransfer
       file: ./src/mapping.ts
+templates:
+  - name: RaftMetadata
+    kind: file/ipfs
+    mapping:
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      file: ./src/mapping.ts
+      handler: handleRaftMetadata
+      entities:
+        - RaftMetadata
+      abis:
+        - name: Raft
+          file: ./abis/Raft.json
+    network: goerli
+  - name: SpecMetadata
+    kind: file/ipfs
+    mapping:
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      file: ./src/mapping.ts
+      handler: handleSpecMetadata
+      entities:
+        - SpecMetadata
+      abis:
+        - name: Badges
+          file: ./abis/Badges.json
+    network: goerli

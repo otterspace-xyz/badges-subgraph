@@ -4,8 +4,11 @@ import {
   Raft as RaftContract,
   MetadataUpdate,
 } from '../generated/Raft/Raft';
-import { BadgeSpec, Raft } from '../generated/schema';
-import { log, json, JSONValue, JSONValueKind } from '@graphprotocol/graph-ts';
+import { BadgeSpec, Raft, SpecMetadata, RaftMetadata } from '../generated/schema';
+import {
+  RaftMetadata as RaftMetadataTemplate, SpecMetadata as SpecMetadataTemplate
+} from "../generated/templates";
+import { log, json, JSONValue, JSONValueKind, Bytes, dataSource, DataSourceContext } from '@graphprotocol/graph-ts';
 import { ipfs } from '@graphprotocol/graph-ts';
 import {
   getCIDFromIPFSUri,
@@ -25,10 +28,6 @@ export function handleRaftTransfer(event: RaftTransfer): void {
   const raftID = getRaftID(tokenId, event.address);
   const timestamp = event.block.timestamp;
 
-  let name = '';
-  let description = '';
-  let image = '';
-
   let raft = Raft.load(raftID);
   if (raft !== null) {
     // Raft was transferred to a new owner
@@ -46,26 +45,15 @@ export function handleRaftTransfer(event: RaftTransfer): void {
     raft.uri = raftContract.tokenURI(tokenId);
 
     const cid = getCIDFromIPFSUri(raft.uri);
-    const metadataBytes = getIPFSMetadataBytes(cid);
-    if (metadataBytes) {
-      const result = json.try_fromBytes(metadataBytes);
-      if (result.isOk) {
-        name = (result.value.toObject().get('name') as JSONValue).toString();
-        description = (result.value.toObject().get('description') as JSONValue).toString();
-        image = (result.value.toObject().get('image') as JSONValue).toString();
-      } else {
-        log.error('handleRaftTransfer: error fetching metadata for {}', [cid]);
-      }
-    } else {
-      log.error('handleRaftTransfer: Invalid IPFS for cid {} for raftID {}', [cid, raftID]);
+    raft.metadata = cid;
+    let context = new DataSourceContext()
+    context.setString('ipfsHash', cid);
+    log.warning('--> make metadata {}', [cid])
+    if(cid != 'test') {
+      RaftMetadataTemplate.createWithContext(cid, context);
     }
-
-    raft.name = name;
-    raft.description = description;
-    raft.image = image;
   }
-
-  raft.save();
+  raft.save()
 }
 
 export function handleSpecCreated(event: SpecCreated): void {
@@ -90,35 +78,14 @@ export function handleSpecCreated(event: SpecCreated): void {
   let expiresAt: string | null = null;
 
   const cidPath = appendMetadataPath(cid);
-  const metadataBytes = ipfs.cat(cidPath);
-  if (metadataBytes) {
-    const result = json.try_fromBytes(metadataBytes);
-    if (result.isOk) {
-      name = (result.value.toObject().get('name') as JSONValue).toString();
-      description = (result.value.toObject().get('description') as JSONValue).toString();
-      image = (result.value.toObject().get('image') as JSONValue).toString();
-
-      const properties = result.value.toObject().get('properties');
-      const expiresAtJsonValue =
-        properties !== null ? properties.toObject().get('expiresAt') : null;
-
-      expiresAt =
-        expiresAtJsonValue !== null && expiresAtJsonValue.kind === JSONValueKind.STRING
-          ? expiresAtJsonValue.toString()
-          : null;
-    } else {
-      log.error('handleSpecCreated: error fetching metadata for {}', [cid]);
-    }
-  } else {
-    log.error('handleSpecCreated: Invalid cid {}, path {} for {}', [cid, cidPath, uri]);
+  spec.metadata = cid;
+  let context = new DataSourceContext()
+  log.warning('--> make metadata {}', [cid])
+  context.setString('ipfsHash', cid);
+  if(cid != 'test') {
+    SpecMetadataTemplate.createWithContext(cid, context);
   }
-
-  spec.name = name;
-  spec.description = description;
-  spec.image = image;
-  spec.expiresAt = expiresAt;
-
-  spec.save();
+  spec.save()
 
   const raft = Raft.load(raftID);
   if (raft !== null) {
@@ -126,6 +93,33 @@ export function handleSpecCreated(event: SpecCreated): void {
     raft.save();
   } else {
     log.error('handleSpecCreated: Raft {} not found. Raft entity was not updated', [raftID]);
+  }
+}
+
+export function handleSpecMetadata(content: Bytes): void {
+
+  let context = dataSource.context()
+  let cid = context.getString('ipfsHash')
+  log.warning('--> got metadata {}', [cid])
+
+  const result = json.try_fromBytes(content);
+  if (result.isOk) {
+    const spec = new SpecMetadata(cid)
+    spec.name = (result.value.toObject().get('name') as JSONValue).toString();
+    spec.description = (result.value.toObject().get('description') as JSONValue).toString();
+    spec.image = (result.value.toObject().get('image') as JSONValue).toString();
+
+    const properties = result.value.toObject().get('properties');
+    const expiresAtJsonValue =
+      properties !== null ? properties.toObject().get('expiresAt') : null;
+
+    spec.expiresAt =
+      expiresAtJsonValue !== null && expiresAtJsonValue.kind === JSONValueKind.STRING
+        ? expiresAtJsonValue.toString()
+        : null;
+    spec.save()
+  } else {
+    log.error('handleSpecCreated: error fetching metadata for {}', [cid]);
   }
 }
 
@@ -152,21 +146,31 @@ export function handleMetadataUpdate(event: MetadataUpdate): void {
     raft.uri = raftContract.tokenURI(tokenId);
 
     const cid = getCIDFromIPFSUri(raft.uri);
-    const metadataBytes = getIPFSMetadataBytes(cid);
-    if (metadataBytes) {
-      const result = json.try_fromBytes(metadataBytes);
-      if (result.isOk) {
-        raft.name = (result.value.toObject().get('name') as JSONValue).toString();
-        raft.description = (result.value.toObject().get('description') as JSONValue).toString();
-        raft.image = (result.value.toObject().get('image') as JSONValue).toString();
-      } else {
-        log.error('handleSetTokenURI: error fetching the metadata for {}', [cid]);
-      }
-    } else {
-      log.error('handleSetTokenURI: Invalid IPFS for cid {} for raftID {}', [cid, raftID]);
+    raft.metadata = cid;
+    log.warning('--> make metadata {}', [cid])
+    let context = new DataSourceContext()
+    context.setString('ipfsHash', cid);
+    if(cid != 'test') {
+      RaftMetadataTemplate.createWithContext(cid, context);
     }
-    raft.save();
+    raft.save()
+  }
+}
+
+export function handleRaftMetadata(content: Bytes): void {
+
+  let context = dataSource.context()
+  let cid = context.getString('ipfsHash')
+  log.warning('--> got metadata {}', [cid])
+
+  const result = json.try_fromBytes(content);
+  if (result.isOk) {
+    const raft = new RaftMetadata(cid)
+    raft.name = (result.value.toObject().get('name') as JSONValue).toString();
+    raft.description = (result.value.toObject().get('description') as JSONValue).toString();
+    raft.image = (result.value.toObject().get('image') as JSONValue).toString();
+    raft.save()
   } else {
-    log.error('handleSetTokenURI: Raft {} not found. Raft entity was not updated', [raftID]);
+    log.error('handleSetTokenURI: error fetching the metadata for {}', [cid]);
   }
 }

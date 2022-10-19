@@ -2,10 +2,8 @@
 
 type Raft @entity {
   id: ID!
-  name: String!
-  description: String!
   uri: String!
-  image: String!
+  metadata: RaftMetadata!
   owner: Bytes!
   tokenId: BigInt!
   specs: [BadgeSpec!]! @derivedFrom(field: "raft")
@@ -15,18 +13,30 @@ type Raft @entity {
   createdBy: String!
 }
 
-type BadgeSpec @entity {
-  id: String!
+type RaftMetadata @entity {
+  id: ID!
   name: String!
   description: String!
-  uri: String!
   image: String!
-  expiresAt: String
+}
+
+type BadgeSpec @entity {
+  id: String!
+  uri: String!
+  metadata: SpecMetadata!
   raft: Raft!
   badges: [Badge!]! @derivedFrom(field: "spec")
   totalBadgesCount: Int!
   createdAt: Int!
   createdBy: String!
+}
+
+type SpecMetadata @entity {
+  id: ID!
+  name: String!
+  description: String!
+  image: String!
+  expiresAt: String
 }
 
 type Badge @entity {
