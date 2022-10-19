@@ -57,7 +57,7 @@ templates:
     mapping:
       apiVersion: 0.0.6
       language: wasm/assemblyscript
-      file: ./src/mapping.ts
+      file: ./src/fileMapping.ts
       handler: handleRaftMetadata
       entities:
         - RaftMetadata
@@ -70,7 +70,7 @@ templates:
     mapping:
       apiVersion: 0.0.6
       language: wasm/assemblyscript
-      file: ./src/mapping.ts
+      file: ./src/fileMapping.ts
       handler: handleSpecMetadata
       entities:
         - SpecMetadata
