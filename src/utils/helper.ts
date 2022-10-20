@@ -26,7 +26,9 @@ export function getCIDFromIPFSUri(uri: string): string {
   } else {
     cid = uri;
   }
-
+  if(cid.length < 30 || cid.includes(" ")) {
+    return 'invalid-cid'
+  }
   return cid;
 }
 

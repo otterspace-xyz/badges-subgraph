@@ -3,7 +3,7 @@
 type Raft @entity {
   id: ID!
   uri: String!
-  metadata: RaftMetadata!
+  metadata: RaftMetadata
   owner: Bytes!
   tokenId: BigInt!
   specs: [BadgeSpec!]! @derivedFrom(field: "raft")
@@ -23,7 +23,7 @@ type RaftMetadata @entity {
 type BadgeSpec @entity {
   id: String!
   uri: String!
-  metadata: SpecMetadata!
+  metadata: SpecMetadata
   raft: Raft!
   badges: [Badge!]! @derivedFrom(field: "spec")
   totalBadgesCount: Int!

@@ -1,4 +1,4 @@
-import { SpecCreated, Transfer as BadgeTransfer } from '../generated/Badges/Badges';
+import { SpecCreated, Transfer as BadgeTransfer, RefreshMetadata } from '../generated/Badges/Badges';
 import {
   Transfer as RaftTransfer,
   Raft as RaftContract,
@@ -21,7 +21,11 @@ import {
 import { handleBadgeMinted, handleBadgeBurned } from './badges';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
-const excludedCids = ['test',"Dasha's cool raft token"];
+const excludedCids = ['invalid-cid'];
+
+function checkCid(cid: string): boolean {
+  return cid.length > 0 && !excludedCids.includes(cid)
+}
 
 export function handleRaftTransfer(event: RaftTransfer): void {
   const to = event.params.to;
@@ -46,12 +50,14 @@ export function handleRaftTransfer(event: RaftTransfer): void {
     raft.uri = raftContract.tokenURI(tokenId);
 
     const cid = getCIDFromIPFSUri(raft.uri);
-    raft.metadata = cid;
+    const cidPath = appendMetadataPath(cid);
+    raft.metadata = cidPath;
     let context = new DataSourceContext()
-    context.setString('ipfsHash', cid);
-    log.warning('--> make metadata {}', [cid])
-    if(cid && !excludedCids.includes(cid)) {
-      RaftMetadataTemplate.createWithContext(cid, context);
+    context.setString('ipfsHash', cidPath);
+    log.warning('--> make metadata {}', [cidPath])
+    if(checkCid(cid)) {
+      log.warning('--> creating with context {}', [cidPath])
+      RaftMetadataTemplate.createWithContext(cidPath, context);
     }
   }
   raft.save()
@@ -74,12 +80,13 @@ export function handleSpecCreated(event: SpecCreated): void {
   spec.createdBy = createdBy;
 
   const cidPath = appendMetadataPath(cid);
-  spec.metadata = cid;
+  spec.metadata = cidPath;
   let context = new DataSourceContext()
-  log.warning('--> make metadata {}', [cid])
-  context.setString('ipfsHash', cid);
-  if(cid && !excludedCids.includes(cid)) {
-    SpecMetadataTemplate.createWithContext(cid, context);
+  log.warning('--> make metadata {}', [cidPath])
+  context.setString('ipfsHash', cidPath);
+  if(checkCid(cid)) {
+    log.warning('--> creating with context {}', [cidPath])
+    SpecMetadataTemplate.createWithContext(cidPath, context);
   }
   spec.save()
 
@@ -115,13 +122,32 @@ export function handleMetadataUpdate(event: MetadataUpdate): void {
     raft.uri = raftContract.tokenURI(tokenId);
 
     const cid = getCIDFromIPFSUri(raft.uri);
-    raft.metadata = cid;
-    log.warning('--> make metadata {}', [cid])
+    const cidPath = appendMetadataPath(cid);
+    raft.metadata = cidPath;
+    log.warning('--> make metadata {}', [cidPath])
     let context = new DataSourceContext()
-    context.setString('ipfsHash', cid);
-    if(cid && !excludedCids.includes(cid)) {
-      RaftMetadataTemplate.createWithContext(cid, context);
+    context.setString('ipfsHash', cidPath);
+    if(checkCid(cid)) {
+      log.warning('--> creating with context {}', [cidPath])
+      RaftMetadataTemplate.createWithContext(cidPath, context);
     }
     raft.save()
+  }
+}
+
+export function handleRefreshMetadata(event: RefreshMetadata): void {
+  const cid = getCIDFromIPFSUri(event.params.specUri);
+  let spec = BadgeSpec.load(cid);
+  if(spec){
+    const cidPath = appendMetadataPath(cid);
+    spec.metadata = cidPath;
+    let context = new DataSourceContext()
+    log.warning('--> make metadata {}', [cidPath])
+    context.setString('ipfsHash', cidPath);
+    if(checkCid(cid)) {
+      log.warning('--> creating with context {}', [cidPath])
+      SpecMetadataTemplate.createWithContext(cidPath, context);
+    }
+    spec.save()
   }
 }
