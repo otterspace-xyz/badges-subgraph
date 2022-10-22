@@ -18,7 +18,7 @@ export function buildCIDPathFromRaftUri(uri: string): string {
   const cid = getCIDFromIPFSUri(uri);
   let cidPath = '';
 
-  if (cid.length < 30 || cid.includes(' ')) {
+  if (cid.length < 30 || cid.includes(' ') || !['ba','Qm'].includes(cid.substring(0,2))) {
     cidPath = 'invalid-cid';
   } else if (uri.indexOf(metadataPart) >= 0) {
     cidPath = appendMetadataPath(cid);
@@ -43,7 +43,7 @@ export function getCIDFromIPFSUri(uri: string): string {
     cid = uri;
   }
 
-  if (cid.length < 30 || cid.includes(' ')) {
+  if (cid.length < 30 || cid.includes(' ') || !['ba','Qm'].includes(cid.substring(0,2))) {
     return 'invalid-cid';
   }
 
