@@ -1,5 +1,9 @@
 import { describe, test, assert } from 'matchstick-as';
-import { getCIDFromIPFSUri, getFullMetadataPath } from '../src/utils/helper';
+import {
+  buildCIDPathFromRaftUri,
+  getCIDFromIPFSUri,
+  getFullMetadataPath,
+} from '../src/utils/helper';
 
 describe('utils', () => {
   test('Should get cid from an IPFS link', () => {
@@ -41,6 +45,38 @@ describe('utils', () => {
     const cid = 'bafyreicwfifynqtubhc5k2iiy37ozcthimwu6qfqkrgrdu5gmnvzgfdxdm';
 
     const actual = getFullMetadataPath(cid);
+    assert.stringEquals(expected, actual);
+  });
+
+  test('Should construct CID path with metadata part when uri has metadata part', () => {
+    const uri = 'ipfs://bafyreicwfifynqtubhc5k2iiy37ozcthimwu6qfqkrgrdu5gmnvzgfdxdm/metadata.json';
+    const expected = 'bafyreicwfifynqtubhc5k2iiy37ozcthimwu6qfqkrgrdu5gmnvzgfdxdm/metadata.json';
+
+    const actual = buildCIDPathFromRaftUri(uri);
+    assert.stringEquals(expected, actual);
+  });
+
+  test('Should construct CID path without metadata part when uri does not have metadata part', () => {
+    const uri = 'ipfs://bafyreicwfifynqtubhc5k2iiy37ozcthimwu6qfqkrgrdu5gmnvzgfdxdm';
+    const expected = 'bafyreicwfifynqtubhc5k2iiy37ozcthimwu6qfqkrgrdu5gmnvzgfdxdm';
+
+    const actual = buildCIDPathFromRaftUri(uri);
+    assert.stringEquals(expected, actual);
+  });
+
+  test('Should return invalid-cid value for invalid CID in Raft URI', () => {
+    const uri = 'blahhhh';
+    const expected = 'invalid-cid';
+
+    const actual = buildCIDPathFromRaftUri(uri);
+    assert.stringEquals(expected, actual);
+  });
+
+  test('Should return invalid-cid value for an invalid CID in Spec URI', () => {
+    const uri = 'blahhhh';
+    const expected = 'invalid-cid';
+
+    const actual = getCIDFromIPFSUri(uri);
     assert.stringEquals(expected, actual);
   });
 });
