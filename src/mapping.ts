@@ -75,7 +75,6 @@ export function handleSpecCreated(event: SpecCreated): void {
   spec.createdAt = timestamp.toI32();
   spec.totalBadgesCount = 0;
   spec.createdBy = createdBy;
-  spec.expiresAt = null;
   spec.save();
 
   updateBadgeSpecMetadata(cid);
