@@ -45,8 +45,8 @@ type Badge @entity {
   owner: Bytes!
   spec: BadgeSpec!
   createdAt: Int!
-  status: String!
-  statusReason: String!
-  statusUpdatedAt: Int!
-  statusUpdatedBy: String!
+  status: String
+  statusReason: String
+  statusUpdatedAt: Int
+  statusUpdatedBy: String
 }
