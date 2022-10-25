@@ -35,7 +35,7 @@
       {
         "indexed": true,
         "internalType": "address",
-        "name": "reinstatedFrom",
+        "name": "from",
         "type": "address"
       }
     ],
@@ -54,7 +54,7 @@
       {
         "indexed": true,
         "internalType": "address",
-        "name": "revokedFrom",
+        "name": "from",
         "type": "address"
       },
       {
@@ -110,6 +110,32 @@
       }
     ],
     "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "specUri",
+        "type": "string"
+      }
+    ],
+    "name": "RefreshMetadata",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "specUri",
+        "type": "string"
+      }
+    ],
+    "name": "RefreshMetadata",
     "type": "event"
   },
   {
@@ -440,6 +466,32 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "_specUri",
+        "type": "string"
+      }
+    ],
+    "name": "refreshMetaData",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "_specUri",
+        "type": "string"
+      }
+    ],
+    "name": "refreshMetaData",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {

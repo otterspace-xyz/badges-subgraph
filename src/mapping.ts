@@ -1,8 +1,9 @@
 import {
-  BadgeReinstated,
-  BadgeRevoked,
   SpecCreated,
   Transfer as BadgeTransfer,
+  RefreshMetadata,
+  BadgeRevoked,
+  BadgeReinstated,
 } from '../generated/Badges/Badges';
 import {
   Transfer as RaftTransfer,
@@ -10,14 +11,19 @@ import {
   MetadataUpdate,
 } from '../generated/Raft/Raft';
 import { Badge, BadgeSpec, Raft } from '../generated/schema';
-import { log, json, JSONValue, JSONValueKind } from '@graphprotocol/graph-ts';
-import { ipfs } from '@graphprotocol/graph-ts';
+import {
+  RaftMetadata as RaftMetadataTemplate,
+  SpecMetadata as SpecMetadataTemplate,
+} from '../generated/templates';
+import { log, DataSourceContext } from '@graphprotocol/graph-ts';
 import {
   getCIDFromIPFSUri,
   getBadgeID,
   getRaftID,
   appendMetadataPath,
-  getIPFSMetadataBytes,
+  getFullMetadataPath,
+  isValidCID,
+  buildCIDPathFromRaftUri,
   getReasonString,
 } from './utils/helper';
 import { handleBadgeMinted, handleBadgeBurned } from './badges';
@@ -30,16 +36,17 @@ export function handleRaftTransfer(event: RaftTransfer): void {
   const raftID = getRaftID(tokenId, event.address);
   const timestamp = event.block.timestamp;
 
-  let name = '';
-  let description = '';
-  let image = '';
-
   let raft = Raft.load(raftID);
   if (raft !== null) {
     // Raft was transferred to a new owner
     raft.owner = to;
+    raft.save();
   } else {
+    const raftContract = RaftContract.bind(event.address);
+    const tokenUri = raftContract.tokenURI(tokenId);
+
     raft = new Raft(raftID);
+    raft.uri = tokenUri
     raft.owner = to;
     raft.tokenId = tokenId;
     raft.totalBadgesCount = 0;
@@ -47,35 +54,15 @@ export function handleRaftTransfer(event: RaftTransfer): void {
     raft.createdAt = timestamp.toI32();
     raft.createdBy = event.params.from.toHexString();
 
-    const raftContract = RaftContract.bind(event.address);
-    raft.uri = raftContract.tokenURI(tokenId);
+    raft.save();
 
-    const cid = getCIDFromIPFSUri(raft.uri);
-    const metadataBytes = getIPFSMetadataBytes(cid);
-    if (metadataBytes) {
-      const result = json.try_fromBytes(metadataBytes);
-      if (result.isOk) {
-        name = (result.value.toObject().get('name') as JSONValue).toString();
-        description = (result.value.toObject().get('description') as JSONValue).toString();
-        image = (result.value.toObject().get('image') as JSONValue).toString();
-      } else {
-        log.error('handleRaftTransfer: error fetching metadata for {}', [cid]);
-      }
-    } else {
-      log.error('handleRaftTransfer: Invalid IPFS for cid {} for raftID {}', [cid, raftID]);
-    }
-
-    raft.name = name;
-    raft.description = description;
-    raft.image = image;
+    updateRaftMetadata(raftID);
   }
-
-  raft.save();
 }
 
 export function handleSpecCreated(event: SpecCreated): void {
   const cid = getCIDFromIPFSUri(event.params.specUri);
-  const uri = appendMetadataPath(event.params.specUri);
+  const uri = getFullMetadataPath(cid);
   const raftAddress = event.params.raftAddress;
   const raftTokenId = event.params.raftTokenId;
   const raftID = getRaftID(raftTokenId, raftAddress);
@@ -88,42 +75,10 @@ export function handleSpecCreated(event: SpecCreated): void {
   spec.createdAt = timestamp.toI32();
   spec.totalBadgesCount = 0;
   spec.createdBy = createdBy;
-
-  let name = '';
-  let description = '';
-  let image = '';
-  let expiresAt: string | null = null;
-
-  const cidPath = appendMetadataPath(cid);
-  const metadataBytes = ipfs.cat(cidPath);
-  if (metadataBytes) {
-    const result = json.try_fromBytes(metadataBytes);
-    if (result.isOk) {
-      name = (result.value.toObject().get('name') as JSONValue).toString();
-      description = (result.value.toObject().get('description') as JSONValue).toString();
-      image = (result.value.toObject().get('image') as JSONValue).toString();
-
-      const properties = result.value.toObject().get('properties');
-      const expiresAtJsonValue =
-        properties !== null ? properties.toObject().get('expiresAt') : null;
-
-      expiresAt =
-        expiresAtJsonValue !== null && expiresAtJsonValue.kind === JSONValueKind.STRING
-          ? expiresAtJsonValue.toString()
-          : null;
-    } else {
-      log.error('handleSpecCreated: error fetching metadata for {}', [cid]);
-    }
-  } else {
-    log.error('handleSpecCreated: Invalid cid {} for {}', [cid, uri]);
-  }
-
-  spec.name = name;
-  spec.description = description;
-  spec.image = image;
-  spec.expiresAt = expiresAt;
-
+  spec.expiresAt = null;
   spec.save();
+
+  updateBadgeSpecMetadata(cid);
 
   const raft = Raft.load(raftID);
   if (raft !== null) {
@@ -132,6 +87,11 @@ export function handleSpecCreated(event: SpecCreated): void {
   } else {
     log.error('handleSpecCreated: Raft {} not found. Raft entity was not updated', [raftID]);
   }
+}
+
+export function handleRefreshSpecMetadata(event: RefreshMetadata): void {
+  const cid = getCIDFromIPFSUri(event.params.specUri);
+  updateBadgeSpecMetadata(cid);
 }
 
 export function handleBadgeTransfer(event: BadgeTransfer): void {
@@ -146,33 +106,53 @@ export function handleBadgeTransfer(event: BadgeTransfer): void {
   }
 }
 
-export function handleMetadataUpdate(event: MetadataUpdate): void {
+// this runs when `setTokenUri` is called on the contract
+export function handleRaftMetadataUpdate(event: MetadataUpdate): void {
   const tokenId = event.params.tokenId;
   const raftAddress = event.address;
   const raftID = getRaftID(tokenId, raftAddress);
+  updateRaftMetadata(raftID);
+}
+
+function updateRaftMetadata(raftID: string): void {
   const raft = Raft.load(raftID);
-
   if (raft !== null) {
-    const raftContract = RaftContract.bind(event.address);
-    raft.uri = raftContract.tokenURI(tokenId);
+    const cidPath = buildCIDPathFromRaftUri(raft.uri);
+    raft.metadata = cidPath;
 
-    const cid = getCIDFromIPFSUri(raft.uri);
-    const metadataBytes = getIPFSMetadataBytes(cid);
-    if (metadataBytes) {
-      const result = json.try_fromBytes(metadataBytes);
-      if (result.isOk) {
-        raft.name = (result.value.toObject().get('name') as JSONValue).toString();
-        raft.description = (result.value.toObject().get('description') as JSONValue).toString();
-        raft.image = (result.value.toObject().get('image') as JSONValue).toString();
-      } else {
-        log.error('handleSetTokenURI: error fetching the metadata for {}', [cid]);
-      }
+    if (isValidCID(cidPath)) {
+      let context = new DataSourceContext();
+      context.setString('ipfsHash', cidPath);
+      RaftMetadataTemplate.createWithContext(cidPath, context);
     } else {
-      log.error('handleSetTokenURI: Invalid IPFS for cid {} for raftID {}', [cid, raftID]);
+      log.error('updateRaftMetadata: Invalid CID in {} for raftID {}', [raft.uri, raftID]);
     }
+
     raft.save();
   } else {
-    log.error('handleSetTokenURI: Raft {} not found. Raft entity was not updated', [raftID]);
+    log.error('updateRaftMetadata: Raft {} not found. RaftMetadata was not updated', [raftID]);
+  }
+}
+
+function updateBadgeSpecMetadata(cid: string): void {
+  const spec = BadgeSpec.load(cid);
+  if (spec !== null) {
+    const cidPath = appendMetadataPath(cid);
+    spec.metadata = cidPath;
+
+    if (isValidCID(cid)) {
+    let context = new DataSourceContext();
+    context.setString('ipfsHash', cidPath);
+      SpecMetadataTemplate.createWithContext(cidPath, context);
+    } else {
+      log.error('updateBadgeSpecMetadata: Invalid CID {}', [cid]);
+    }
+
+    spec.save();
+  } else {
+    log.error('updateBadgeSpecMetadata: BadgeSpec {} not found. BadgeSpec entity was not updated', [
+      cid,
+    ]);
   }
 }
 

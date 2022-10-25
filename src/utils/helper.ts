@@ -1,12 +1,32 @@
-import { BigInt, Address, log, Bytes, ipfs } from '@graphprotocol/graph-ts';
+import { BigInt, Address, Bytes, ipfs } from '@graphprotocol/graph-ts';
 
 const raftsUrnNamespace = 'rafts';
 const badgesUrnNamespace = 'badges';
 const metadataPart = '/metadata.json';
+const excludedCids = ['invalid-cid'];
 
 // returns a fully formed metadata uri for raft & badge metadata
 export function appendMetadataPath(uri: string): string {
   return uri.concat(metadataPart);
+}
+
+export function getFullMetadataPath(cid: string): string {
+  return `ipfs://${cid}${metadataPart}`;
+}
+
+export function buildCIDPathFromRaftUri(uri: string): string {
+  const cid = getCIDFromIPFSUri(uri);
+  let cidPath = '';
+
+  if (cid.length < 30 || cid.includes(' ') || !['ba','Qm'].includes(cid.substring(0,2))) {
+    cidPath = 'invalid-cid';
+  } else if (uri.indexOf(metadataPart) >= 0) {
+    cidPath = appendMetadataPath(cid);
+  } else {
+    cidPath = cid;
+  }
+
+  return cidPath;
 }
 
 // returns a string that is a CID extracted from the IPFS uri
@@ -21,6 +41,10 @@ export function getCIDFromIPFSUri(uri: string): string {
     cid = cidPart.substring(cidPart.lastIndexOf('/') + 1);
   } else {
     cid = uri;
+  }
+
+  if (cid.length < 30 || cid.includes(' ') || !['ba','Qm'].includes(cid.substring(0,2))) {
+    return 'invalid-cid';
   }
 
   return cid;
@@ -54,4 +78,8 @@ export function getReasonString(reasonCode: u32): string {
     default:
       return 'other';
   }
+}
+
+export function isValidCID(cid: string): boolean {
+  return cid.length > 0 && !excludedCids.includes(cid);
 }

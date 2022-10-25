@@ -8,11 +8,11 @@ features:
 dataSources:
   - kind: ethereum/contract
     name: Raft
-    network: goerli
+    network: optimism
     source:
       abi: Raft
-      address: "0xBb8997048e5F0bFe6C9D6BEe63Ede53BD0236Bb2"
-      startBlock: 7456732
+      address: "0xa6773847d3D2c8012C9cF62818b320eE278Ff722"
+      startBlock: 20256100
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -26,15 +26,15 @@ dataSources:
         - event: Transfer(indexed address,indexed address,indexed uint256)
           handler: handleRaftTransfer
         - event: MetadataUpdate(indexed uint256)
-          handler: handleMetadataUpdate
+          handler: handleRaftMetadataUpdate
       file: ./src/mapping.ts
   - kind: ethereum/contract
     name: Badges
-    network: goerli
+    network: optimism
     source:
       abi: Badges
-      address: "0xa6773847d3D2c8012C9cF62818b320eE278Ff722"
-      startBlock: 7456664
+      address: "0x7F9279B24D1c36Fa3E517041fdb4E8788dc63D25"
+      startBlock: 20256100
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -52,4 +52,33 @@ dataSources:
           handler: handleBadgeTransfer
         - event: BadgeRevoked(indexed uint256,indexed address,indexed uint8)
           handler: handleBadgeRevoked
+        - event: RefreshMetadata(string)
+          handler: handleRefreshSpecMetadata
       file: ./src/mapping.ts
+templates:
+  - name: RaftMetadata
+    kind: file/ipfs
+    mapping:
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      file: ./src/fileMapping.ts
+      handler: handleRaftMetadata
+      entities:
+        - RaftMetadata
+      abis:
+        - name: Raft
+          file: ./abis/Raft.json
+    network: optimism
+  - name: SpecMetadata
+    kind: file/ipfs
+    mapping:
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      file: ./src/fileMapping.ts
+      handler: handleSpecMetadata
+      entities:
+        - SpecMetadata
+      abis:
+        - name: Badges
+          file: ./abis/Badges.json
+    network: optimism
