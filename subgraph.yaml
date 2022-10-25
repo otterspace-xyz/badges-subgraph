@@ -52,6 +52,8 @@ dataSources:
           handler: handleBadgeTransfer
         - event: BadgeRevoked(indexed uint256,indexed address,indexed uint8)
           handler: handleBadgeRevoked
+        - event: BadgeReinstated(indexed uint256,indexed address)
+          handler: handleBadgeReinstated
         - event: RefreshMetadata(string)
           handler: handleRefreshSpecMetadata
       file: ./src/mapping.ts
