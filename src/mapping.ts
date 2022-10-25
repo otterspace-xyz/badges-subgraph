@@ -2,18 +2,20 @@ import {
   SpecCreated,
   Transfer as BadgeTransfer,
   RefreshMetadata,
+  BadgeRevoked,
+  BadgeReinstated,
 } from '../generated/Badges/Badges';
 import {
   Transfer as RaftTransfer,
   Raft as RaftContract,
   MetadataUpdate,
 } from '../generated/Raft/Raft';
-import { BadgeSpec, Raft } from '../generated/schema';
+import { Badge, BadgeSpec, Raft } from '../generated/schema';
 import {
   RaftMetadata as RaftMetadataTemplate,
   SpecMetadata as SpecMetadataTemplate,
 } from '../generated/templates';
-import { log, DataSourceContext } from '@graphprotocol/graph-ts';
+import { log, DataSourceContext, BigInt } from '@graphprotocol/graph-ts';
 import {
   getCIDFromIPFSUri,
   getBadgeID,
@@ -22,8 +24,9 @@ import {
   getFullMetadataPath,
   isValidCID,
   buildCIDPathFromRaftUri,
+  getReasonString,
 } from './utils/helper';
-import { handleBadgeMinted, handleBadgeBurned } from './badges';
+import { handleBadgeMinted } from './badges';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -43,7 +46,7 @@ export function handleRaftTransfer(event: RaftTransfer): void {
     const tokenUri = raftContract.tokenURI(tokenId);
 
     raft = new Raft(raftID);
-    raft.uri = tokenUri
+    raft.uri = tokenUri;
     raft.owner = to;
     raft.tokenId = tokenId;
     raft.totalBadgesCount = 0;
@@ -72,7 +75,6 @@ export function handleSpecCreated(event: SpecCreated): void {
   spec.createdAt = timestamp.toI32();
   spec.totalBadgesCount = 0;
   spec.createdBy = createdBy;
-  spec.expiresAt = null;
   spec.save();
 
   updateBadgeSpecMetadata(cid);
@@ -93,14 +95,30 @@ export function handleRefreshSpecMetadata(event: RefreshMetadata): void {
 
 export function handleBadgeTransfer(event: BadgeTransfer): void {
   const from = event.params.from.toHexString();
+  const to = event.params.to.toHexString();
   const tokenId = event.params.tokenId;
   const badgeAddress = event.address;
   const badgeId = getBadgeID(tokenId, badgeAddress);
+  const timestamp = event.block.timestamp;
+  let status = '';
+  let statusReason = '';
+  let statusChangedBy = '';
+
   if (from == ZERO_ADDRESS) {
     handleBadgeMinted(badgeId, event);
+    status = 'MINTED';
+    statusReason = 'Badge minted by user';
+    statusChangedBy = to;
+  } else if (to == ZERO_ADDRESS) {
+    status = 'BURNED';
+    statusReason = 'Badge burned by user';
+    statusChangedBy = from;
   } else {
-    handleBadgeBurned(badgeId, event);
+    log.error('Invalid Badge Transfer event - from {}, to {}', [from, to]);
+    return;
   }
+
+  updateBadgeStatus(badgeId, timestamp, status, statusReason, statusChangedBy);
 }
 
 // this runs when `setTokenUri` is called on the contract
@@ -138,8 +156,8 @@ function updateBadgeSpecMetadata(cid: string): void {
     spec.metadata = cidPath;
 
     if (isValidCID(cid)) {
-    let context = new DataSourceContext();
-    context.setString('ipfsHash', cidPath);
+      let context = new DataSourceContext();
+      context.setString('ipfsHash', cidPath);
       SpecMetadataTemplate.createWithContext(cidPath, context);
     } else {
       log.error('updateBadgeSpecMetadata: Invalid CID {}', [cid]);
@@ -150,5 +168,51 @@ function updateBadgeSpecMetadata(cid: string): void {
     log.error('updateBadgeSpecMetadata: BadgeSpec {} not found. BadgeSpec entity was not updated', [
       cid,
     ]);
+  }
+}
+
+export function handleBadgeRevoked(event: BadgeRevoked): void {
+  const tokenId = event.params.tokenId;
+  const badgeAddress = event.address;
+  const badgeId = getBadgeID(tokenId, badgeAddress);
+  const timestamp = event.block.timestamp;
+  const reasonCode = event.params.reason;
+  const reason = getReasonString(reasonCode);
+  const from = event.params.from.toHexString();
+  const status = 'REVOKED';
+
+  updateBadgeStatus(badgeId, timestamp, status, reason, from);
+}
+
+export function handleBadgeReinstated(event: BadgeReinstated): void {
+  const tokenId = event.params.tokenId;
+  const badgeAddress = event.address;
+  const badgeId = getBadgeID(tokenId, badgeAddress);
+  const timestamp = event.block.timestamp;
+  const reason = 'Reinstated by user';
+  const from = event.params.from.toHexString();
+  const status = 'REINSTATED';
+
+  updateBadgeStatus(badgeId, timestamp, status, reason, from);
+}
+
+function updateBadgeStatus(
+  badgeId: string,
+  timestamp: BigInt,
+  status: string,
+  reason: string,
+  byAddress: string,
+): void {
+  const badge = Badge.load(badgeId);
+  if (badge !== null) {
+    // todo: not sure about storing it like this. Maybe we need a better way to store this
+    // todo: still not capturing revokedBy
+    badge.status = status;
+    badge.statusReason = reason;
+    badge.statusUpdatedAt = timestamp.toU32();
+    badge.statusUpdatedBy = byAddress;
+    badge.save();
+  } else {
+    log.error('Badge {} not found. Badge entity was not updated with status details', [badgeId]);
   }
 }

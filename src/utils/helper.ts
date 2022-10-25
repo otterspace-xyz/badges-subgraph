@@ -70,6 +70,21 @@ export function getIPFSMetadataBytes(cid: string): Bytes | null {
   return metadataBytes;
 }
 
+export function getReasonString(reasonCode: u32): string {
+  switch (reasonCode) {
+    case 0:
+      return 'abuse';
+    case 1:
+      return 'left community';
+    case 2:
+      return 'tenure ended';
+    case 3:
+      return 'other';
+    default:
+      return '';
+  }
+}
+
 export function isValidCID(cid: string): boolean {
   return cid.length > 0 && !excludedCids.includes(cid);
 }
