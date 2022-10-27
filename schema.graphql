@@ -24,6 +24,7 @@ type BadgeSpec @entity {
   id: String!
   metadata: SpecMetadata
   uri: String!
+  specUri: String!
   raft: Raft!
   badges: [Badge!]! @derivedFrom(field: "spec")
   totalBadgesCount: Int!

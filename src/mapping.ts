@@ -70,7 +70,8 @@ export function handleSpecCreated(event: SpecCreated): void {
   const createdBy = event.params.to.toHexString();
 
   let spec = new BadgeSpec(cid);
-  spec.uri = uri;
+  spec.uri = uri; // this is the fully resolvable metadata uri
+  spec.specUri = event.params.specUri; // this is the value that was used to registered spec
   spec.raft = raftID;
   spec.createdAt = timestamp.toI32();
   spec.totalBadgesCount = 0;
