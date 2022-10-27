@@ -126,6 +126,19 @@ export function handleRaftMetadataUpdate(event: MetadataUpdate): void {
   const tokenId = event.params.tokenId;
   const raftAddress = event.address;
   const raftID = getRaftID(tokenId, raftAddress);
+  const raftContract = RaftContract.bind(raftAddress);
+  const tokenURI = raftContract.tokenURI(tokenId);
+  const raft = Raft.load(raftID);
+
+  if (raft !== null) {
+    raft.uri = tokenURI;
+    raft.save();
+  } else {
+    log.error('handleRaftMetadataUpdate: Raft {} not found. RaftMetadata was not updated', [
+      raftID,
+    ]);
+  }
+
   updateRaftMetadata(raftID);
 }
 
