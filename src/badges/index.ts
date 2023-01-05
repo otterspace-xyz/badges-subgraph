@@ -17,7 +17,7 @@ export function handleBadgeMinted(badgeId: string, event: BadgeTransfer): void {
   badge.from = from;
   badge.owner = to;
   badge.spec = specID;
-  badge.createdAt = timestamp;
+  badge.createdAt = timestamp.toU32();
   badge.save();
 
   const spec = BadgeSpec.load(specID);
@@ -33,24 +33,10 @@ export function handleBadgeMinted(badgeId: string, event: BadgeTransfer): void {
     } else {
       log.error(
         'handleBadgeMinted: RaftID {} not found. Raft entity was not updated with totalBadgesCount',
-        [raftID]
+        [raftID],
       );
     }
   } else {
     log.error('handleBadgeMinted: Spec {} not found. Badge entity was not created', [specID]);
-  }
-}
-export function handleBadgeBurned(badgeId: string, event: BadgeTransfer): void {
-  const timestamp = event.block.timestamp;
-
-  const badge = Badge.load(badgeId);
-  if (badge !== null) {
-    badge.burnedAt = timestamp;
-    badge.save();
-  } else {
-    log.error(
-      'handleBadgeBurned: Badge {} not found. Badge entity was not updated with burnedAtTimestamp',
-      [badgeId]
-    );
   }
 }

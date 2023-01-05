@@ -25,6 +25,8 @@ dataSources:
       eventHandlers:
         - event: Transfer(indexed address,indexed address,indexed uint256)
           handler: handleRaftTransfer
+        - event: MetadataUpdate(indexed uint256)
+          handler: handleRaftMetadataUpdate
       file: ./src/mapping.ts
   - kind: ethereum/contract
     name: Badges
@@ -48,4 +50,37 @@ dataSources:
           handler: handleSpecCreated
         - event: Transfer(indexed address,indexed address,indexed uint256)
           handler: handleBadgeTransfer
+        - event: BadgeRevoked(indexed uint256,indexed address,indexed uint8)
+          handler: handleBadgeRevoked
+        - event: BadgeReinstated(indexed uint256,indexed address)
+          handler: handleBadgeReinstated
+        - event: RefreshMetadata(string)
+          handler: handleRefreshSpecMetadata
       file: ./src/mapping.ts
+templates:
+  - name: RaftMetadata
+    kind: file/ipfs
+    mapping:
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      file: ./src/fileMapping.ts
+      handler: handleRaftMetadata
+      entities:
+        - RaftMetadata
+      abis:
+        - name: Raft
+          file: ./abis/Raft.json
+    network: goerli
+  - name: SpecMetadata
+    kind: file/ipfs
+    mapping:
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      file: ./src/fileMapping.ts
+      handler: handleSpecMetadata
+      entities:
+        - SpecMetadata
+      abis:
+        - name: Badges
+          file: ./abis/Badges.json
+    network: goerli
