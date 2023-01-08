@@ -18,5 +18,15 @@
       "address": "0xBb8997048e5F0bFe6C9D6BEe63Ede53BD0236Bb2",
       "startBlock": 7456732
     }
+  },
+  "optimism-goerli": {
+    "Badges": {
+      "address": "0x940f3B56FD53028f5d76a9cA335b1a9a6135528A",
+      "startBlock": 3208981
+    },
+    "Raft": {
+      "address": "0xcd31CFCd7b784C5F4f51D4EaC45376bA30F9C3Eb",
+      "startBlock": 3208974
+    }
   }
 }
