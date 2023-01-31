@@ -27,6 +27,8 @@ dataSources:
           handler: handleRaftTransfer
         - event: MetadataUpdate(indexed uint256)
           handler: handleRaftMetadataUpdate
+        - event: AdminUpdate(indexed uint256,indexed address,bool)
+          handler: handleAdminUpdate
       file: ./src/mapping.ts
   - kind: ethereum/contract
     name: Badges
