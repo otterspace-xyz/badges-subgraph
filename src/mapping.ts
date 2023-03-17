@@ -9,13 +9,14 @@ import {
   Transfer as RaftTransfer,
   Raft as RaftContract,
   MetadataUpdate,
+  AdminUpdate,
 } from '../generated/Raft/Raft';
-import { Badge, BadgeSpec, Raft } from '../generated/schema';
+import { Badge, BadgeSpec, Raft, User } from '../generated/schema';
 import {
   RaftMetadata as RaftMetadataTemplate,
   SpecMetadata as SpecMetadataTemplate,
 } from '../generated/templates';
-import { log, DataSourceContext, BigInt } from '@graphprotocol/graph-ts';
+import { log, DataSourceContext, BigInt, Bytes, Address } from '@graphprotocol/graph-ts';
 import {
   getCIDFromIPFSUri,
   getBadgeID,
@@ -36,6 +37,8 @@ export function handleRaftTransfer(event: RaftTransfer): void {
   const raftID = getRaftID(tokenId, event.address);
   const timestamp = event.block.timestamp;
 
+  createUser(event.params.to);
+
   let raft = Raft.load(raftID);
   if (raft !== null) {
     // Raft was transferred to a new owner
@@ -51,6 +54,7 @@ export function handleRaftTransfer(event: RaftTransfer): void {
     raft.tokenId = tokenId;
     raft.totalBadgesCount = 0;
     raft.totalSpecsCount = 0;
+    raft.admins = new Array<Bytes>();
     raft.createdAt = timestamp.toI32();
     raft.createdBy = event.params.from.toHexString();
 
@@ -105,6 +109,8 @@ export function handleBadgeTransfer(event: BadgeTransfer): void {
   let statusReason = '';
   let statusChangedBy = '';
 
+  createUser(event.params.to);
+
   if (from == ZERO_ADDRESS) {
     handleBadgeMinted(badgeId, event);
     status = 'MINTED';
@@ -120,6 +126,40 @@ export function handleBadgeTransfer(event: BadgeTransfer): void {
   }
 
   updateBadgeStatus(badgeId, timestamp, status, statusReason, statusChangedBy);
+}
+
+export function handleAdminUpdate(event: AdminUpdate): void {
+  const tokenId = event.params.tokenId;
+  const raftAddress = event.address;
+  const raftID = getRaftID(tokenId, raftAddress);
+  const adminAddress = event.params.admin;
+  const isAdminActive = event.params.isAdded;
+  const raft = Raft.load(raftID);
+
+  createUser(adminAddress);
+
+  if (raft !== null) {
+    let admins = raft.admins;
+    const index = raft.admins.indexOf(adminAddress);
+    if (isAdminActive && index === -1) {
+      admins.push(adminAddress);
+    } else if (!isAdminActive && index > -1) {
+      admins.splice(index, 1);
+    }
+    raft.admins = admins;
+    raft.save();
+  } else {
+    log.error('handleAdminUpdate: Raft {} not found', [raftID]);
+  }
+}
+
+function createUser(userAddress: Address): void {
+  let user = User.load(userAddress);
+
+  if (user === null) {
+    user = new User(userAddress);
+    user.save();
+  }
 }
 
 // this runs when `setTokenUri` is called on the contract
