@@ -8,11 +8,11 @@ features:
 dataSources:
   - kind: ethereum/contract
     name: Raft
-    network: goerli
+    network: mainnet
     source:
       abi: Raft
-      address: "0xBb8997048e5F0bFe6C9D6BEe63Ede53BD0236Bb2"
-      startBlock: 7456732
+      address: "0x7465dA7E01A5FF3b2b1699EDa9E617A1329C14b8"
+      startBlock: 16883041
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -32,11 +32,11 @@ dataSources:
       file: ./src/mapping.ts
   - kind: ethereum/contract
     name: Badges
-    network: goerli
+    network: mainnet
     source:
       abi: Badges
-      address: "0xa6773847d3D2c8012C9cF62818b320eE278Ff722"
-      startBlock: 7456664
+      address: "0x4537e34D5044626d72b3da203e7ffE997245947C"
+      startBlock: 16883131
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -72,7 +72,7 @@ templates:
       abis:
         - name: Raft
           file: ./abis/Raft.json
-    network: goerli
+    network: mainnet
   - name: SpecMetadata
     kind: file/ipfs
     mapping:
@@ -85,4 +85,4 @@ templates:
       abis:
         - name: Badges
           file: ./abis/Badges.json
-    network: goerli
+    network: mainnet
