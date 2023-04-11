@@ -5,6 +5,7 @@ type User @entity {
   adminOfCommunities: [Raft!] @derivedFrom(field: "admins")
   ownerOfCommunities: [Raft!] @derivedFrom(field: "owner")
   badges: [Badge!] @derivedFrom(field: "owner")
+  totalBadgesCount: Int!
 }
 
 type Raft @entity {
