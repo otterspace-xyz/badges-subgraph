@@ -28,5 +28,15 @@
       "address": "0xcd31CFCd7b784C5F4f51D4EaC45376bA30F9C3Eb",
       "startBlock": 3208974
     }
+  },
+  "polygon": {
+    "Badges": {
+      "address": "0x147e0dF40fdD1340C604726c670329c08176F208",
+      "startBlock": 41684605
+    },
+    "Raft": {
+      "address": "0xa74caa864A2562999faf38280A3aA3d09c248daA",
+      "startBlock": 41684422
+    }
   }
 }
