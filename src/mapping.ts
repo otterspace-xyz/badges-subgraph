@@ -27,7 +27,7 @@ import {
   buildCIDPathFromRaftUri,
   getReasonString,
 } from './utils/helper';
-import { handleBadgeMinted } from './badges';
+import { handleBadgeMinted, handleBadgeBurned } from './badges';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -117,6 +117,7 @@ export function handleBadgeTransfer(event: BadgeTransfer): void {
     statusReason = 'Badge minted by user';
     statusChangedBy = to;
   } else if (to == ZERO_ADDRESS) {
+    handleBadgeBurned(event.params.to);
     status = 'BURNED';
     statusReason = 'Badge burned by user';
     statusChangedBy = from;
@@ -158,6 +159,7 @@ function createUser(userAddress: Address): void {
 
   if (user === null) {
     user = new User(userAddress);
+    user.totalBadgesCount = 0;
     user.save();
   }
 }
