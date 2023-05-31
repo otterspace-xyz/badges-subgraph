@@ -18,15 +18,15 @@
     "deploy:optimism-alpha": "graph deploy --product hosted-service otterspace-xyz/badges-optimism-alpha --network optimism",
     "deploy:optimism-goerli": "graph deploy --product hosted-service otterspace-xyz/badges-optimism-goerli --network optimism-goerli",
     "deploy:polygon": "graph deploy --product hosted-service otterspace-xyz/badges-polygon --network matic",
-    "deploy:sepolia": "graph deploy --product hosted-service otterspace-xyz/badges-sepolia --network sepolia",
+    "deploy:sepolia": "graph deploy --product=subgraph-studio badges-sepolia --network=sepolia --version-label=1.0.0",
     "create-local": "graph create --node http://localhost:8020/ badges",
     "remove-local": "graph remove --node http://localhost:8020/ badges",
     "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 badges",
     "test": "graph test"
   },
   "dependencies": {
-    "@graphprotocol/graph-cli": "0.35.0",
-    "@graphprotocol/graph-ts": "0.28.1"
+    "@graphprotocol/graph-cli": "^0.50.1",
+    "@graphprotocol/graph-ts": "^0.30.0"
   },
   "devDependencies": {
     "matchstick-as": "^0.5.0",
