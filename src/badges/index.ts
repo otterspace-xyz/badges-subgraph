@@ -8,6 +8,7 @@ export function handleBadgeMinted(badgeId: string, event: BadgeTransfer): void {
   const from = event.params.from;
   const to = event.params.to;
   const timestamp = event.block.timestamp;
+  const txnHash = event.transaction.hash.toHexString();
 
   const badgesContract = BadgesContract.bind(event.address);
   const specUri = badgesContract.tokenURI(tokenId);
@@ -18,6 +19,7 @@ export function handleBadgeMinted(badgeId: string, event: BadgeTransfer): void {
   badge.owner = to;
   badge.spec = specID;
   badge.createdAt = timestamp.toU32();
+  badge.transactionHash = txnHash;
   badge.save();
 
   let raftID = '';

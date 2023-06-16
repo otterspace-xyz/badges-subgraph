@@ -20,6 +20,7 @@ type Raft @entity {
   totalBadgesCount: Int!
   createdAt: Int!
   createdBy: String!
+  transactionHash: String!
 }
 
 type RaftMetadata @entity {
@@ -39,6 +40,7 @@ type BadgeSpec @entity {
   totalBadgesCount: Int!
   createdAt: Int!
   createdBy: String!
+  transactionHash: String!
 }
 
 type SpecMetadata @entity {
@@ -59,4 +61,5 @@ type Badge @entity {
   statusReason: String
   statusUpdatedAt: Int
   statusUpdatedBy: String
+  transactionHash: String!
 }
