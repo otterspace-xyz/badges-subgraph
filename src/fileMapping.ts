@@ -1,5 +1,13 @@
 import { SpecMetadata, RaftMetadata } from '../generated/schema';
-import { log, json, JSONValue, JSONValueKind, Bytes, dataSource, Result } from '@graphprotocol/graph-ts';
+import {
+  log,
+  json,
+  JSONValue,
+  JSONValueKind,
+  Bytes,
+  dataSource,
+  Result,
+} from '@graphprotocol/graph-ts';
 
 export function handleSpecMetadata(content: Bytes): void {
   let context = dataSource.context();
@@ -9,11 +17,13 @@ export function handleSpecMetadata(content: Bytes): void {
   if (result.isOk) {
     const spec = new SpecMetadata(cid);
 
-    spec.schema = getStringValueFromMetadata(result, 'schema')
-    spec.name = getStringValueFromMetadata(result, 'name')
-    spec.description = getStringValueFromMetadata(result, 'description')
-    spec.image = getStringValueFromMetadata(result, 'image')
-    spec.externalUrl = result.value.toObject().get('external_url')?.toString() ?? null;
+    spec.schema = getStringValueFromMetadata(result, 'schema');
+    spec.name = getStringValueFromMetadata(result, 'name');
+    spec.description = getStringValueFromMetadata(result, 'description');
+    spec.image = getStringValueFromMetadata(result, 'image');
+
+    const externalUrl = result.value.toObject().get('external_url');
+    spec.externalUrl = externalUrl !== null ? externalUrl.toString() : null;
 
     const properties = result.value.toObject().get('properties');
     spec.expiresAt = getFieldFromProperties(properties, 'expiresAt');
