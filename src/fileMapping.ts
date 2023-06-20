@@ -17,10 +17,12 @@ export function handleSpecMetadata(content: Bytes): void {
   if (result.isOk) {
     const spec = new SpecMetadata(cid);
 
-    spec.schema = getStringValueFromMetadata(result, 'schema');
     spec.name = getStringValueFromMetadata(result, 'name');
     spec.description = getStringValueFromMetadata(result, 'description');
     spec.image = getStringValueFromMetadata(result, 'image');
+
+    const schema = result.value.toObject().get('schema');
+    spec.schema = schema !== null ? schema.toString() : null;
 
     const externalUrl = result.value.toObject().get('external_url');
     spec.externalUrl = externalUrl !== null ? externalUrl.toString() : null;

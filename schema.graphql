@@ -44,7 +44,7 @@ type BadgeSpec @entity {
 }
 
 type SpecMetadata @entity {
-  schema: String!
+  schema: String
   id: ID!
   name: String!
   description: String!
