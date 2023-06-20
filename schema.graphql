@@ -44,11 +44,13 @@ type BadgeSpec @entity {
 }
 
 type SpecMetadata @entity {
+  schema: String!
   id: ID!
   name: String!
   description: String!
   image: String!
   expiresAt: String
+  externalUrl: String
 }
 
 type Badge @entity {

@@ -1,45 +1,52 @@
 import { SpecMetadata, RaftMetadata } from '../generated/schema';
-import { log, json, JSONValue, JSONValueKind, Bytes, dataSource } from '@graphprotocol/graph-ts';
+import { log, json, JSONValue, JSONValueKind, Bytes, dataSource, Result } from '@graphprotocol/graph-ts';
 
 export function handleSpecMetadata(content: Bytes): void {
-  let context = dataSource.context()
-  let cid = context.getString('ipfsHash')
+  let context = dataSource.context();
+  let cid = context.getString('ipfsHash');
 
   const result = json.try_fromBytes(content);
   if (result.isOk) {
-    const spec = new SpecMetadata(cid)
-    spec.name = (result.value.toObject().get('name') as JSONValue).toString();
-    spec.description = (result.value.toObject().get('description') as JSONValue).toString();
-    spec.image = (result.value.toObject().get('image') as JSONValue).toString();
+    const spec = new SpecMetadata(cid);
+
+    spec.schema = getStringValueFromMetadata(result, 'schema')
+    spec.name = getStringValueFromMetadata(result, 'name')
+    spec.description = getStringValueFromMetadata(result, 'description')
+    spec.image = getStringValueFromMetadata(result, 'image')
+    spec.externalUrl = result.value.toObject().get('external_url')?.toString() ?? null;
 
     const properties = result.value.toObject().get('properties');
-    const expiresAtJsonValue =
-      properties !== null ? properties.toObject().get('expiresAt') : null;
+    spec.expiresAt = getFieldFromProperties(properties, 'expiresAt');
 
-    spec.expiresAt =
-      expiresAtJsonValue !== null && expiresAtJsonValue.kind === JSONValueKind.STRING
-        ? expiresAtJsonValue.toString()
-        : null;
-
-    spec.save()
+    spec.save();
   } else {
     log.error('handleSpecMetadata: error fetching metadata for {}', [cid]);
   }
 }
 
+function getStringValueFromMetadata(result: Result<JSONValue, boolean>, key: string): string {
+  return (result.value.toObject().get(key) as JSONValue).toString();
+}
+
+function getFieldFromProperties(properties: JSONValue | null, fieldName: string): string | null {
+  const value = properties !== null ? properties.toObject().get(fieldName) : null;
+
+  return value !== null && value.kind === JSONValueKind.STRING ? value.toString() : null;
+}
+
 export function handleRaftMetadata(content: Bytes): void {
-  let context = dataSource.context()
-  let cid = context.getString('ipfsHash')
+  let context = dataSource.context();
+  let cid = context.getString('ipfsHash');
 
   const result = json.try_fromBytes(content);
   if (result.isOk) {
-    const raft = new RaftMetadata(cid)
+    const raft = new RaftMetadata(cid);
 
     raft.name = (result.value.toObject().get('name') as JSONValue).toString();
     raft.description = (result.value.toObject().get('description') as JSONValue).toString();
     raft.image = (result.value.toObject().get('image') as JSONValue).toString();
 
-    raft.save()
+    raft.save();
   } else {
     log.error('handleRaftMetadata: error fetching the metadata for {}', [cid]);
   }
