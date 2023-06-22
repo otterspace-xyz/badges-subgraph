@@ -1,0 +1,27 @@
+name: Subgraph Main Deployment
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - run: yarn
+      - run: yarn codegen
+      - run: yarn prepare:optimism
+      - run: yarn prepare:polygon
+      - run: yarn build:optimism && yarn deploy:optimism
+      - run: yarn build:polygon && yarn deploy:polygon

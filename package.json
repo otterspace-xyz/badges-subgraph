@@ -7,6 +7,11 @@
     "format": "prettier --config .prettierrc --write \"**/*.{ts,js}\"",
     "format:file": "prettier --config .prettierrc --write",
     "codegen": "graph codegen",
+    "prepare:goerli": "mustache config/goerli.json subgraph.template.yaml > subgraph.yaml",
+    "prepare:optimism": "mustache config/optimism.json subgraph.template.yaml > subgraph.yaml",
+    "prepare:optimism-goerli": "mustache config/optimism-goerli.json subgraph.template.yaml > subgraph.yaml",
+    "prepare:polygon": "mustache config/matic.json subgraph.template.yaml > subgraph.yaml",
+    "prepare:sepolia": "mustache config/sepolia.json subgraph.template.yaml > subgraph.yaml",
     "build:goerli": "graph build --network goerli",
     "build:optimism": "graph build --network optimism",
     "build:optimism-goerli": "graph build --network optimism-goerli",
@@ -23,6 +28,7 @@
     "remove-local": "graph remove --node http://localhost:8020/ badges",
     "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 badges",
     "test": "graph test"
+
   },
   "dependencies": {
     "@graphprotocol/graph-cli": "^0.50.1",
