@@ -42,5 +42,8 @@ jobs:
       - name: Run GraphQL codegen
         run: yarn codegen
 
+      - name: Prepare project
+        run: yarn prepare:sepolia
+
       - name: Build project
-        run: yarn build:goerli
+        run: yarn build:sepolia
