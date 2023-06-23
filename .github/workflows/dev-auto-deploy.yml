@@ -23,14 +23,29 @@ jobs:
           node-version: 18
 
       - run: yarn
+
       - run: yarn prepare:goerli
       - run: yarn prepare:optimism-goerli
       - run: yarn prepare:sepolia
+
       - run: yarn codegen
 
-      - run: yarn auth-service "$ACCESS_TOKEN_SERVICE"
+      - run: yarn auth:service "$ACCESS_TOKEN_SERVICE"
       - run: yarn build:goerli && yarn deploy:goerli && yarn deploy:goerli-alpha
       - run: yarn build:optimism-goerli && yarn deploy:optimism-goerli
 
-      - run: yarn auth-studio "$ACCESS_TOKEN_STUDIO"
-      - run: yarn build:sepolia && yarn deploy:sepolia
+      - name: Determine current version
+        id: versioning
+        run: |
+          CURRENT_VERSION=$(git describe --tags --abbrev=0)
+          echo "Current version: $CURRENT_VERSION"
+
+      - name: Bump version
+        id: bump_version
+        run: |
+          NEW_VERSION="${{ steps.versioning.outputs.CURRENT_VERSION }}+1"
+          echo "New version: $NEW_VERSION"
+
+
+      - run: yarn auth:studio "$ACCESS_TOKEN_STUDIO"
+      - run: yarn build:sepolia && yarn deploy:sepolia "$NEW_VERSION"
