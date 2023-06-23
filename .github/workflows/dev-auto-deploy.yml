@@ -34,26 +34,26 @@ jobs:
       - run: yarn build:goerli && yarn deploy:goerli && yarn deploy:goerli-alpha
       - run: yarn build:optimism-goerli && yarn deploy:optimism-goerli
 
-      - name: Fetch tags
-        run: git fetch --tags
-
-      - name: Determine current version
-        id: versioning
+      - name: Sepolia versioning and deployment
         run: |
           CURRENT_VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "1.0.2")
           echo "Current version: $CURRENT_VERSION"
+          
+          # Parse the version string
+          IFS='.' read -ra version_array <<< "$CURRENT_VERSION"
 
-      - name: Bump version
-        id: bump_version
-        run: |
-          NEW_VERSION="${{ steps.versioning.outputs.CURRENT_VERSION }}+1"
+          # Increment the last number
+          last_number=$(( ${version_array[2]} + 1 ))
+
+          # Update the last number in the array
+          version_array[2]=$last_number
+
+          # Join the array elements with dots to form the new version string
+          NEW_VERSION=$(IFS='.'; echo "${version_array[*]}")
           echo "New version: $NEW_VERSION"
 
-      - name: Create tag
-        run: |
-          git tag ${{ steps.bump_version.outputs.NEW_VERSION }}
+          git tag $NEW_VERSION
           git push --tags
 
-      - run: yarn auth:studio "$ACCESS_TOKEN_STUDIO"
-      - run: yarn build:sepolia && yarn deploy:sepolia ${{ steps.bump_version.outputs.NEW_VERSION }}
-      
+          yarn auth:studio "$ACCESS_TOKEN_STUDIO"
+          yarn build:sepolia && yarn deploy:sepolia $NEW_VERSION
