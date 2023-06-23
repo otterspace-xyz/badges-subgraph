@@ -24,6 +24,6 @@ jobs:
       - run: yarn prepare:optimism-goerli
       - run: yarn prepare:sepolia
       - run: yarn codegen
-      - run: yarn build:goerli && yarn deploy:goerli
+      - run: yarn build:goerli && yarn deploy:goerli && yarn deploy:goerli-alpha
       - run: yarn build:optimism-goerli && yarn deploy:optimism-goerli
       - run: yarn build:sepolia && yarn deploy:sepolia

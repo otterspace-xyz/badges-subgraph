@@ -24,6 +24,6 @@ jobs:
       - run: yarn prepare:polygon
       - run: yarn prepare:mainnet
       - run: yarn codegen
-      - run: yarn build:optimism && yarn deploy:optimism
+      - run: yarn build:optimism && yarn deploy:optimism && yarn deploy:optimism-alpha
       - run: yarn build:polygon && yarn deploy:polygon
       - run: yarn build:mainnet && yarn deploy:mainnet
