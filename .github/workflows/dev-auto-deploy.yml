@@ -23,11 +23,6 @@ jobs:
           node-version: 18
 
       - run: yarn
-
-      - run: yarn prepare:goerli
-      - run: yarn prepare:optimism-goerli
-      - run: yarn prepare:sepolia
-
       - run: yarn codegen
 
       - run: yarn auth:service "$ACCESS_TOKEN_SERVICE"

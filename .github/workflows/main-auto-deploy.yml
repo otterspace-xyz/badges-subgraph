@@ -22,11 +22,6 @@ jobs:
           node-version: 18
 
       - run: yarn
-
-      - run: yarn prepare:optimism
-      - run: yarn prepare:polygon
-      - run: yarn prepare:mainnet
-
       - run: yarn codegen
 
       - run: yarn auth:service "$ACCESS_TOKEN_SERVICE"

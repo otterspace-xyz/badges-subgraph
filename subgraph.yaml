@@ -8,11 +8,11 @@ features:
 dataSources:
   - kind: ethereum/contract
     name: Raft
-    network: { { network } }
+    network: sepolia
     source:
       abi: Raft
-      address: "{{Raft.address}}"
-      startBlock: { { Raft.startBlock } }
+      address: "0xa74caa864A2562999faf38280A3aA3d09c248daA"
+      startBlock: 3142387
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -32,11 +32,11 @@ dataSources:
       file: ./src/mapping.ts
   - kind: ethereum/contract
     name: Badges
-    network: { { network } }
+    network: sepolia
     source:
       abi: Badges
-      address: "{{Badges.address}}"
-      startBlock: { { Badges.startBlock } }
+      address: "0x639a1703CfdeDaE61A535d53890130b4257f15eb"
+      startBlock: 3142391
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -72,7 +72,7 @@ templates:
       abis:
         - name: Raft
           file: ./abis/Raft.json
-    network: { { network } }
+    network: sepolia
   - name: SpecMetadata
     kind: file/ipfs
     mapping:
@@ -85,4 +85,4 @@ templates:
       abis:
         - name: Badges
           file: ./abis/Badges.json
-    network: { { network } }
+    network: sepolia
