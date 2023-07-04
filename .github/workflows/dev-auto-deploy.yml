@@ -1,0 +1,59 @@
+name: Subgraph Dev Deployment
+
+on:
+  push:
+    branches:
+      - dev
+  pull_request:
+    branches:
+      - dev
+    types:
+      - closed
+
+jobs:
+  deploy:
+    env:
+      ACCESS_TOKEN_SERVICE: ${{ secrets.ACCESS_TOKEN_SERVICE }}
+      ACCESS_TOKEN_STUDIO: ${{ secrets.ACCESS_TOKEN_STUDIO }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - run: yarn
+
+      - run: yarn prepare:goerli
+      - run: yarn prepare:optimism-goerli
+      - run: yarn prepare:sepolia
+
+      - run: yarn codegen
+
+      - run: yarn auth:service "$ACCESS_TOKEN_SERVICE"
+      - run: yarn build:goerli && yarn deploy:goerli && yarn deploy:goerli-alpha
+      - run: yarn build:optimism-goerli && yarn deploy:optimism-goerli
+
+      - name: Sepolia versioning and deployment
+        run: |
+          CURRENT_VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "1.0.2")
+          echo "Current version: $CURRENT_VERSION"
+          
+          # Parse the version string
+          IFS='.' read -ra version_array <<< "$CURRENT_VERSION"
+
+          # Increment the last number
+          last_number=$(( ${version_array[2]} + 1 ))
+
+          # Update the last number in the array
+          version_array[2]=$last_number
+
+          # Join the array elements with dots to form the new version string
+          NEW_VERSION=$(IFS='.'; echo "${version_array[*]}")
+          echo "New version: $NEW_VERSION"
+
+          git tag $NEW_VERSION
+          git push --tags
+
+          yarn auth:studio "$ACCESS_TOKEN_STUDIO"
+          yarn build:sepolia && yarn deploy:sepolia $NEW_VERSION

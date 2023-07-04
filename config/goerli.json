@@ -1,0 +1,11 @@
+{ 
+    "network": "goerli",
+    "Badges": {
+      "address": "0xa6773847d3D2c8012C9cF62818b320eE278Ff722",
+      "startBlock": 7456664
+    },
+    "Raft": {
+      "address": "0xBb8997048e5F0bFe6C9D6BEe63Ede53BD0236Bb2",
+      "startBlock": 7456732
+    }
+  }

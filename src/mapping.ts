@@ -36,6 +36,7 @@ export function handleRaftTransfer(event: RaftTransfer): void {
   const tokenId = event.params.tokenId;
   const raftID = getRaftID(tokenId, event.address);
   const timestamp = event.block.timestamp;
+  const txnHash = event.transaction.hash.toHexString();
 
   createUser(event.params.to);
 
@@ -57,6 +58,7 @@ export function handleRaftTransfer(event: RaftTransfer): void {
     raft.admins = new Array<Bytes>();
     raft.createdAt = timestamp.toI32();
     raft.createdBy = event.params.from.toHexString();
+    raft.transactionHash = txnHash;
 
     raft.save();
 
@@ -72,6 +74,7 @@ export function handleSpecCreated(event: SpecCreated): void {
   const raftID = getRaftID(raftTokenId, raftAddress);
   const timestamp = event.block.timestamp;
   const createdBy = event.params.to.toHexString();
+  const txnHash = event.transaction.hash.toHexString();
 
   let spec = new BadgeSpec(cid);
   spec.uri = uri; // this is the fully resolvable metadata uri
@@ -80,6 +83,7 @@ export function handleSpecCreated(event: SpecCreated): void {
   spec.createdAt = timestamp.toI32();
   spec.totalBadgesCount = 0;
   spec.createdBy = createdBy;
+  spec.transactionHash = txnHash;
   spec.save();
 
   updateBadgeSpecMetadata(cid);

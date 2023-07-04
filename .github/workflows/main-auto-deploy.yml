@@ -1,0 +1,35 @@
+name: Subgraph Main Deployment
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
+
+jobs:
+  deploy:
+    env:
+      ACCESS_TOKEN_SERVICE: ${{ secrets.ACCESS_TOKEN_SERVICE }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - run: yarn
+
+      - run: yarn prepare:optimism
+      - run: yarn prepare:polygon
+      - run: yarn prepare:mainnet
+
+      - run: yarn codegen
+
+      - run: yarn auth:service "$ACCESS_TOKEN_SERVICE"
+      - run: yarn build:optimism && yarn deploy:optimism && yarn deploy:optimism-alpha
+      - run: yarn build:polygon && yarn deploy:polygon
+      - run: yarn build:mainnet && yarn deploy:mainnet
