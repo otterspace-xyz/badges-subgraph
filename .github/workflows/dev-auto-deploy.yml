@@ -23,11 +23,6 @@ jobs:
           node-version: 18
 
       - run: yarn
-
-      - run: yarn prepare:goerli
-      - run: yarn prepare:optimism-goerli
-      - run: yarn prepare:sepolia
-
       - run: yarn codegen
 
       - run: yarn auth:service "$ACCESS_TOKEN_SERVICE"
@@ -36,7 +31,8 @@ jobs:
 
       - name: Sepolia versioning and deployment
         run: |
-          CURRENT_VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "1.0.2")
+          git tag -l
+          CURRENT_VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "1.0.3")
           echo "Current version: $CURRENT_VERSION"
           
           # Parse the version string

@@ -39,9 +39,6 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
-      - name: Prepare project
-        run: yarn prepare:sepolia
-
       - name: Run GraphQL codegen
         run: yarn codegen
 
