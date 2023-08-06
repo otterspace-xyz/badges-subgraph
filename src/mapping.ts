@@ -2,13 +2,14 @@ import {
   SpecCreated,
   Transfer as BadgeTransfer,
   RefreshMetadata,
+  MetadataUpdate as BadgeMetadataUpdate,
   BadgeRevoked,
   BadgeReinstated,
 } from '../generated/Badges/Badges';
 import {
   Transfer as RaftTransfer,
+  MetadataUpdate as RaftMetadataUpdate,
   Raft as RaftContract,
-  MetadataUpdate,
   AdminUpdate,
 } from '../generated/Raft/Raft';
 import { Badge, BadgeSpec, Raft, User } from '../generated/schema';
@@ -98,8 +99,28 @@ export function handleSpecCreated(event: SpecCreated): void {
 }
 
 export function handleRefreshSpecMetadata(event: RefreshMetadata): void {
-  const cid = getCIDFromIPFSUri(event.params.specUri);
-  updateBadgeSpecMetadata(cid);
+  for (let i = 0; i < event.params.specUris.length; i++) {
+    const cid = getCIDFromIPFSUri(event.params.specUris[i]);
+    updateBadgeSpecMetadata(cid);
+  }
+}
+
+export function handleBadgeMetadataUpdated(event:BadgeMetadataUpdate): void {
+  const badgeId = getBadgeID(event.params.tokenId, event.address);
+  const badge = Badge.load(badgeId);
+  if (badge == null) {
+    log.error('handleMetadataUpdated: Badge {} not found', [badgeId]);
+    return;
+  }
+
+  const cid = getCIDFromIPFSUri(event.params.newTokenURI.toString());
+  if (cid == "invalid-cid") {
+    log.error('token uri {} didnt contain a valid cid', [event.params.newTokenURI.toString()]);
+    return
+  }
+  badge.uriUpdatedAt = event.block.timestamp.toU32();
+  badge.uri = getFullMetadataPath(cid);
+  badge.save()
 }
 
 export function handleBadgeTransfer(event: BadgeTransfer): void {
@@ -169,7 +190,7 @@ function createUser(userAddress: Address): void {
 }
 
 // this runs when `setTokenUri` is called on the contract
-export function handleRaftMetadataUpdate(event: MetadataUpdate): void {
+export function handleRaftMetadataUpdate(event: RaftMetadataUpdate): void {
   const tokenId = event.params.tokenId;
   const raftAddress = event.address;
   const raftID = getRaftID(tokenId, raftAddress);
