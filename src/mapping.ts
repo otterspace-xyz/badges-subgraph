@@ -5,6 +5,7 @@ import {
   MetadataUpdate as BadgeMetadataUpdate,
   BadgeRevoked,
   BadgeReinstated,
+  Badges as BadgeContract
 } from '../generated/Badges/Badges';
 import {
   Transfer as RaftTransfer,
@@ -113,9 +114,15 @@ export function handleBadgeMetadataUpdated(event:BadgeMetadataUpdate): void {
     return;
   }
 
-  const cid = getCIDFromIPFSUri(event.params.newTokenURI.toString());
+  //notice: we unfortunately can't use the event's `newTokenURI`, since it's emitted as indexed value
+  // https://docs.soliditylang.org/en/v0.8.21/abi-spec.html#encoding-of-indexed-event-parameters
+  // https://ethereum.stackexchange.com/questions/6840/indexed-event-with-string-not-getting-logged
+  const badgeContract = BadgeContract.bind(event.address);
+  const newTokenUri = badgeContract.tokenURI(event.params.tokenId);
+
+  const cid = getCIDFromIPFSUri(newTokenUri);
   if (cid == "invalid-cid") {
-    log.error('token uri {} didnt contain a valid cid', [event.params.newTokenURI.toString()]);
+    log.error('token uri {} didnt contain a valid cid', [newTokenUri]);
     return
   }
   badge.uriUpdatedAt = event.block.timestamp.toU32();
