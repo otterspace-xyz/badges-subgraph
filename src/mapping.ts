@@ -125,8 +125,8 @@ export function handleBadgeMetadataUpdated(event:BadgeMetadataUpdate): void {
     log.error('token uri {} didnt contain a valid cid', [newTokenUri]);
     return
   }
-  badge.uriUpdatedAt = event.block.timestamp.toU32();
-  badge.uri = getFullMetadataPath(cid);
+  badge.tokenUriUpdatedAt = event.block.timestamp.toU32();
+  badge.tokenUri = getFullMetadataPath(cid);
   badge.save()
 }
 
