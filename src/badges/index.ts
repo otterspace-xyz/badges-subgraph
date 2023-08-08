@@ -20,6 +20,7 @@ export function handleBadgeMinted(badgeId: string, event: BadgeTransfer): void {
   badge.spec = specID;
   badge.createdAt = timestamp.toU32();
   badge.transactionHash = txnHash;
+  badge.tokenUri = specUri;
   badge.save();
 
   let raftID = '';

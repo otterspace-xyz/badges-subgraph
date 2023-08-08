@@ -64,4 +64,6 @@ type Badge @entity {
   statusUpdatedAt: Int
   statusUpdatedBy: String
   transactionHash: String!
+  tokenUri: String!
+  tokenUriUpdatedAt: Int
 }

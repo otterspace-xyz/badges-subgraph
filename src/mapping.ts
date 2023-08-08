@@ -2,13 +2,15 @@ import {
   SpecCreated,
   Transfer as BadgeTransfer,
   RefreshMetadata,
+  MetadataUpdate as BadgeMetadataUpdate,
   BadgeRevoked,
   BadgeReinstated,
+  Badges as BadgeContract
 } from '../generated/Badges/Badges';
 import {
   Transfer as RaftTransfer,
+  MetadataUpdate as RaftMetadataUpdate,
   Raft as RaftContract,
-  MetadataUpdate,
   AdminUpdate,
 } from '../generated/Raft/Raft';
 import { Badge, BadgeSpec, Raft, User } from '../generated/schema';
@@ -98,8 +100,34 @@ export function handleSpecCreated(event: SpecCreated): void {
 }
 
 export function handleRefreshSpecMetadata(event: RefreshMetadata): void {
-  const cid = getCIDFromIPFSUri(event.params.specUri);
-  updateBadgeSpecMetadata(cid);
+  for (let i = 0; i < event.params.specUris.length; i++) {
+    const cid = getCIDFromIPFSUri(event.params.specUris[i]);
+    updateBadgeSpecMetadata(cid);
+  }
+}
+
+export function handleBadgeMetadataUpdated(event:BadgeMetadataUpdate): void {
+  const badgeId = getBadgeID(event.params.tokenId, event.address);
+  const badge = Badge.load(badgeId);
+  if (badge == null) {
+    log.error('handleMetadataUpdated: Badge {} not found', [badgeId]);
+    return;
+  }
+
+  //notice: we unfortunately can't use the event's `newTokenURI`, since it's emitted as indexed value
+  // https://docs.soliditylang.org/en/v0.8.21/abi-spec.html#encoding-of-indexed-event-parameters
+  // https://ethereum.stackexchange.com/questions/6840/indexed-event-with-string-not-getting-logged
+  const badgeContract = BadgeContract.bind(event.address);
+  const newTokenUri = badgeContract.tokenURI(event.params.tokenId);
+
+  const cid = getCIDFromIPFSUri(newTokenUri);
+  if (cid == "invalid-cid") {
+    log.error('token uri {} didnt contain a valid cid', [newTokenUri]);
+    return
+  }
+  badge.tokenUriUpdatedAt = event.block.timestamp.toU32();
+  badge.tokenUri = getFullMetadataPath(cid);
+  badge.save()
 }
 
 export function handleBadgeTransfer(event: BadgeTransfer): void {
@@ -169,7 +197,7 @@ function createUser(userAddress: Address): void {
 }
 
 // this runs when `setTokenUri` is called on the contract
-export function handleRaftMetadataUpdate(event: MetadataUpdate): void {
+export function handleRaftMetadataUpdate(event: RaftMetadataUpdate): void {
   const tokenId = event.params.tokenId;
   const raftAddress = event.address;
   const raftID = getRaftID(tokenId, raftAddress);

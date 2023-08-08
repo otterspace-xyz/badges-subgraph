@@ -515,17 +515,17 @@
         "type": "uint256"
       },
       {
-        "internalType": "address",
-        "name": "admin",
-        "type": "address"
+        "internalType": "address[]",
+        "name": "admins",
+        "type": "address[]"
       },
       {
-        "internalType": "bool",
+        "internalType": "bool[]",
         "name": "isActive",
-        "type": "bool"
+        "type": "bool[]"
       }
     ],
-    "name": "setAdmin",
+    "name": "setAdmins",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
