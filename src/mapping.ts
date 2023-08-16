@@ -5,7 +5,8 @@ import {
   MetadataUpdate as BadgeMetadataUpdate,
   BadgeRevoked,
   BadgeReinstated,
-  Badges as BadgeContract
+  Badges as BadgeContract,
+  Badges,
 } from '../generated/Badges/Badges';
 import {
   Transfer as RaftTransfer,
@@ -57,6 +58,7 @@ export function handleRaftTransfer(event: RaftTransfer): void {
     raft.tokenId = tokenId;
     raft.totalBadgesCount = 0;
     raft.totalSpecsCount = 0;
+    raft.totalBadgeHoldersCount = 0;
     raft.admins = new Array<Bytes>();
     raft.createdAt = timestamp.toI32();
     raft.createdBy = event.params.from.toHexString();
@@ -84,6 +86,7 @@ export function handleSpecCreated(event: SpecCreated): void {
   spec.raft = raftID;
   spec.createdAt = timestamp.toI32();
   spec.totalBadgesCount = 0;
+  spec.totalRevokedBadgesCount = 0;
   spec.createdBy = createdBy;
   spec.transactionHash = txnHash;
   spec.save();
@@ -106,7 +109,7 @@ export function handleRefreshSpecMetadata(event: RefreshMetadata): void {
   }
 }
 
-export function handleBadgeMetadataUpdated(event:BadgeMetadataUpdate): void {
+export function handleBadgeMetadataUpdated(event: BadgeMetadataUpdate): void {
   const badgeId = getBadgeID(event.params.tokenId, event.address);
   const badge = Badge.load(badgeId);
   if (badge == null) {
@@ -121,13 +124,13 @@ export function handleBadgeMetadataUpdated(event:BadgeMetadataUpdate): void {
   const newTokenUri = badgeContract.tokenURI(event.params.tokenId);
 
   const cid = getCIDFromIPFSUri(newTokenUri);
-  if (cid == "invalid-cid") {
+  if (cid == 'invalid-cid') {
     log.error('token uri {} didnt contain a valid cid', [newTokenUri]);
-    return
+    return;
   }
   badge.tokenUriUpdatedAt = event.block.timestamp.toU32();
   badge.tokenUri = getFullMetadataPath(cid);
-  badge.save()
+  badge.save();
 }
 
 export function handleBadgeTransfer(event: BadgeTransfer): void {
@@ -140,8 +143,6 @@ export function handleBadgeTransfer(event: BadgeTransfer): void {
   let status = '';
   let statusReason = '';
   let statusChangedBy = '';
-
-  createUser(event.params.to);
 
   if (from == ZERO_ADDRESS) {
     handleBadgeMinted(badgeId, event);
@@ -270,6 +271,19 @@ export function handleBadgeRevoked(event: BadgeRevoked): void {
   const status = 'REVOKED';
 
   updateBadgeStatus(badgeId, timestamp, status, reason, from);
+
+  const badgesContract = Badges.bind(badgeAddress);
+  const specUri = badgesContract.tokenURI(tokenId);
+  const specID = getCIDFromIPFSUri(specUri);
+
+  // update spec entity
+  const spec = BadgeSpec.load(specID);
+  if (spec !== null) {
+    spec.totalRevokedBadgesCount += 1;
+    spec.save();
+  } else {
+    log.error('handleBadgeRevoked: SpecID {} not found. Spec entity was not updated', [specID]);
+  }
 }
 
 export function handleBadgeReinstated(event: BadgeReinstated): void {
@@ -282,6 +296,19 @@ export function handleBadgeReinstated(event: BadgeReinstated): void {
   const status = 'REINSTATED';
 
   updateBadgeStatus(badgeId, timestamp, status, reason, from);
+
+  const badgesContract = Badges.bind(badgeAddress);
+  const specUri = badgesContract.tokenURI(tokenId);
+  const specID = getCIDFromIPFSUri(specUri);
+
+  // update spec entity
+  const spec = BadgeSpec.load(specID);
+  if (spec !== null) {
+    spec.totalRevokedBadgesCount -= 1;
+    spec.save();
+  } else {
+    log.error('handleBadgeReinstated: SpecID {} not found. Spec entity was not updated', [specID]);
+  }
 }
 
 function updateBadgeStatus(
