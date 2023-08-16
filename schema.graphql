@@ -18,6 +18,7 @@ type Raft @entity {
   admins: [User!]!
   totalSpecsCount: Int!
   totalBadgesCount: Int!
+  totalBadgeHoldersCount: Int!
   createdAt: Int!
   createdBy: String!
   transactionHash: String!
@@ -38,6 +39,7 @@ type BadgeSpec @entity {
   raft: Raft!
   badges: [Badge!]! @derivedFrom(field: "spec")
   totalBadgesCount: Int!
+  totalRevokedBadgesCount: Int!
   createdAt: Int!
   createdBy: String!
   transactionHash: String!
