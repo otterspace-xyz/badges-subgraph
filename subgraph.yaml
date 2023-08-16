@@ -56,8 +56,10 @@ dataSources:
           handler: handleBadgeRevoked
         - event: BadgeReinstated(indexed uint256,indexed address)
           handler: handleBadgeReinstated
-        - event: RefreshMetadata(string)
+        - event: RefreshMetadata(string[],address)
           handler: handleRefreshSpecMetadata
+        - event: MetadataUpdate(indexed uint256,indexed string,indexed address)
+          handler: handleBadgeMetadataUpdated
       file: ./src/mapping.ts
 templates:
   - name: RaftMetadata
