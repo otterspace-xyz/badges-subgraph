@@ -58,8 +58,9 @@ export function handleRaftTransfer(event: RaftTransfer): void {
     raft.tokenId = tokenId;
     raft.totalBadgesCount = 0;
     raft.totalSpecsCount = 0;
-    raft.totalBadgeHoldersCount = 0;
+    raft.totalMembersCount = 0;
     raft.admins = new Array<Bytes>();
+    raft.members = new Array<Bytes>();
     raft.createdAt = timestamp.toI32();
     raft.createdBy = event.params.from.toHexString();
     raft.transactionHash = txnHash;
@@ -150,7 +151,7 @@ export function handleBadgeTransfer(event: BadgeTransfer): void {
     statusReason = 'Badge minted by user';
     statusChangedBy = to;
   } else if (to == ZERO_ADDRESS) {
-    handleBadgeBurned(event.params.to);
+    handleBadgeBurned(badgeId, event.params.to);
     status = 'BURNED';
     statusReason = 'Badge burned by user';
     statusChangedBy = from;
@@ -193,6 +194,7 @@ function createUser(userAddress: Address): void {
   if (user === null) {
     user = new User(userAddress);
     user.totalBadgesCount = 0;
+    user.totalCommunitiesCount = 0;
     user.save();
   }
 }
