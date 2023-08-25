@@ -25,6 +25,6 @@ jobs:
       - run: yarn codegen
 
       - run: yarn auth:service "$ACCESS_TOKEN_SERVICE"
-      - run: yarn build:optimism && yarn deploy:optimism && yarn deploy:optimism-alpha
+      - run: yarn build:optimism && yarn deploy:optimism
       - run: yarn build:polygon && yarn deploy:polygon
       - run: yarn build:mainnet && yarn deploy:mainnet

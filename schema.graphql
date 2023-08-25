@@ -4,8 +4,10 @@ type User @entity {
   id: Bytes!
   adminOfCommunities: [Raft!] @derivedFrom(field: "admins")
   ownerOfCommunities: [Raft!] @derivedFrom(field: "owner")
+  memberOfCommunities: [Raft!] @derivedFrom(field: "members")
   badges: [Badge!] @derivedFrom(field: "owner")
   totalBadgesCount: Int!
+  totalCommunitiesCount: Int!
 }
 
 type Raft @entity {
@@ -16,9 +18,10 @@ type Raft @entity {
   tokenId: BigInt!
   specs: [BadgeSpec!]! @derivedFrom(field: "raft")
   admins: [User!]!
+  members: [User!]!
   totalSpecsCount: Int!
   totalBadgesCount: Int!
-  totalBadgeHoldersCount: Int!
+  totalMembersCount: Int!
   createdAt: Int!
   createdBy: String!
   transactionHash: String!
