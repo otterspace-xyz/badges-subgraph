@@ -26,7 +26,7 @@ jobs:
       - run: yarn codegen
 
       - run: yarn auth:service "$ACCESS_TOKEN_SERVICE"
-      - run: yarn build:goerli && yarn deploy:goerli && yarn deploy:goerli-alpha
+      - run: yarn build:goerli && yarn deploy:goerli
       - run: yarn build:optimism-goerli && yarn deploy:optimism-goerli
 
       - name: Sepolia versioning and deployment
@@ -34,7 +34,7 @@ jobs:
           git tag -l
           CURRENT_VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "1.0.3")
           echo "Current version: $CURRENT_VERSION"
-          
+
           # Parse the version string
           IFS='.' read -ra version_array <<< "$CURRENT_VERSION"
 

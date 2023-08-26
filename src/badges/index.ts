@@ -14,6 +14,7 @@ export function handleBadgeMinted(badgeId: string, event: BadgeTransfer): void {
   const specUri = badgesContract.tokenURI(tokenId);
   const specID = getCIDFromIPFSUri(specUri);
 
+  // create badge entity
   let badge = new Badge(badgeId);
   badge.from = from;
   badge.owner = to;
@@ -29,21 +30,22 @@ export function handleBadgeMinted(badgeId: string, event: BadgeTransfer): void {
   const spec = BadgeSpec.load(specID);
   if (spec !== null) {
     spec.totalBadgesCount += 1;
-    raftID = spec.raft;
     spec.save();
+
+    raftID = spec.raft;
   } else {
     log.error('handleBadgeMinted: SpecID {} not found. Badge entity was not created', [specID]);
+    return
   }
 
   // update user entity
-  let isUserNewBadgeHolder = false;
   let user = User.load(to);
   if (user !== null) {
     user.totalBadgesCount += 1;
   } else {
     user = new User(to);
     user.totalBadgesCount = 0;
-    isUserNewBadgeHolder = true;
+    user.totalCommunitiesCount = 0;
   }
   user.save();
 
@@ -51,7 +53,17 @@ export function handleBadgeMinted(badgeId: string, event: BadgeTransfer): void {
   const raft = Raft.load(raftID);
   if (raft !== null) {
     raft.totalBadgesCount += 1;
-    if (isUserNewBadgeHolder) raft.totalBadgeHoldersCount += 1;
+
+    let members = raft.members;
+    const isUserAlreadyRaftMember = raft.members.includes(to);
+    if (!isUserAlreadyRaftMember) {
+      raft.totalMembersCount += 1;
+      members.push(to);
+
+      user.totalCommunitiesCount += 1;
+      user.save();
+    }
+    raft.members = members;
     raft.save();
   } else {
     log.error(
@@ -61,8 +73,7 @@ export function handleBadgeMinted(badgeId: string, event: BadgeTransfer): void {
   }
 }
 
-export function handleBadgeBurned(to: Address): void {
-  // update user entity
+export function handleBadgeBurned(badgeId: string, to: Address): void {
   const user = User.load(to);
   if (user !== null) {
     user.totalBadgesCount -= 1;
@@ -72,5 +83,49 @@ export function handleBadgeBurned(to: Address): void {
       'handleBadgeBurned: UserID {} not found. User entity was not updated with totalBadgesCount',
       [to.toHexString()],
     );
+    return
+  }
+
+  let specID = '';
+  let raftID = '';
+  const badge = Badge.load(badgeId);
+  if (badge !== null) {
+    specID = badge.spec;
+  } else {
+    log.error('handleBadgeBurned: BadgeID {} not found. Cannot proceed.', [badgeId]);
+    return;
+  }
+
+  const spec = BadgeSpec.load(specID);
+  if (spec !== null) {
+    raftID = spec.raft;
+
+    spec.totalBadgesCount -= 1;
+    spec.save();
+  } else {
+    log.error('handleBadgeBurned: SpecID {} not found. Cannot proceed.', [specID]);
+    return;
+  }
+
+  const raft = Raft.load(raftID);
+  if (raft !== null) {
+    raft.totalBadgesCount -= 1;
+
+    let members = raft.members;
+    const index = raft.members.indexOf(to);
+    const doesUserHaveOtherBadgesFromRaft = spec.totalBadgesCount > 1;
+    if (!doesUserHaveOtherBadgesFromRaft) {
+      raft.totalMembersCount -= 1;
+      members.splice(index, 1);
+
+      user.totalCommunitiesCount -= 1;
+      user.save();
+    }
+    raft.members = members;
+    raft.save();
+  } else {
+    log.error('handleBadgeBurned: RaftID {} not found. Member was not checked for removal.', [
+      raftID,
+    ]);
   }
 }
